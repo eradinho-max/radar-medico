@@ -191,43 +191,157 @@ def _pci_title_from_url(url: str) -> str:
     return " ".join(slug.replace("-", " ").split()).capitalize()
 
 
-def _pci_official_url(page: str):
+def _is_blocked_external(url: str) -> bool:
+    low = (url or "").lower()
+    return any(
+        x in low
+        for x in (
+            "pciconcursos.com.br",
+            "pci.app.br",
+            "google.",
+            "youtube.",
+            "facebook.",
+            "instagram.",
+            "t.me/",
+            "telegram.",
+            "wa.me/",
+            "whatsapp.",
+            "linkedin.",
+            "twitter.",
+            "x.com/",
+        )
+    )
+
+
+def _is_specific_official_url(url: str, label: str = "") -> bool:
+    if not url or _is_blocked_external(url):
+        return False
+
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    path = (parsed.path or "/").lower().rstrip("/")
+    query = (parsed.query or "").lower()
+    evidence = normalizar(f"{label} {path} {query}")
+
+    # Homepage/root de órgão ou banca nunca é suficiente.
+    if path in ("", "/"):
+        return False
+
+    # URLs de processo/edital/seleção com identificador específico.
+    specific_terms = (
+        "edital",
+        "concurso",
+        "processo seletivo",
+        "processo-seletivo",
+        "selecao",
+        "seleção",
+        "smv",
+        "rm2",
+        "rm3",
+        "oficial",
+        "informacoes",
+        "publicacoes",
+        "processos-seletivos",
+        "concursos-publicos",
+        "aviso de convocacao",
+        "aviso-de-convocacao",
+    )
+    if any(normalizar(term) in evidence for term in specific_terms):
+        return True
+
+    # Rotas numeradas usadas por portais oficiais/bancas, ex.: /node/100, /informacoes/35.
+    if re.search(r"/(?:node|informacoes|publicacao|publicacoes|edital|processo)/[^/]+", path):
+        return True
+
+    # PDF oficial é específico por definição.
+    if path.endswith(".pdf"):
+        return True
+
+    return False
+
+
+def _title_keywords(title: str) -> list[str]:
+    stop = {
+        "abre", "abrem", "com", "para", "vagas", "vaga", "salarios", "salario",
+        "publico", "publica", "edital", "concurso", "processo", "seletivo",
+        "seleção", "selecao", "temporarios", "temporario", "medico", "medicos",
+        "mg", "sp", "rj", "al", "rs", "sc", "pr", "brasil", "prefeitura",
+        "municipal", "ate", "nivel", "superior",
+    }
+    words = re.findall(r"[a-z0-9ºª-]{4,}", normalizar(title))
+    return [w for w in words if w not in stop][:10]
+
+
+def _find_specific_link_on_page(page: str, base_url: str, title: str):
+    pat = re.compile(
+        r"""<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)</a>""",
+        re.I,
+    )
+    keywords = _title_keywords(title)
+    candidates = []
+
+    for href, inner in pat.findall(page):
+        absolute = urljoin(base_url, html.unescape(href))
+        label = strip_tags(inner)
+        if _is_blocked_external(absolute):
+            continue
+        if not _is_specific_official_url(absolute, label):
+            continue
+
+        evidence = normalizar(f"{label} {absolute}")
+        score = 0
+        if any(x in evidence for x in ("edital", "concurso", "processo seletivo", "selecao", "smv", "rm2", "rm3")):
+            score += 5
+        score += sum(2 for keyword in keywords if keyword in evidence)
+        if str(date.today().year) in evidence or str(date.today().year + 1) in evidence:
+            score += 2
+        if absolute.lower().endswith(".pdf"):
+            score += 2
+
+        candidates.append((score, absolute))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    best_score, best_url = candidates[0]
+    return best_url if best_score >= 5 else None
+
+
+def _pci_official_url(page: str, title: str):
     pat = re.compile(
         r"""<a\b[^>]*href=["'](https?://[^"']+)["'][^>]*>([\s\S]*?)</a>""",
         re.I,
     )
-    fallback = None
+    generic_candidates = []
+
     for href, inner in pat.findall(page):
         url = html.unescape(href)
-        low = url.lower()
-        if any(
-            x in low
-            for x in (
-                "pciconcursos.com.br",
-                "pci.app.br",
-                "google.",
-                "youtube.",
-                "facebook.",
-                "instagram.",
-                "t.me/",
-                "telegram.",
-                "wa.me/",
-                "whatsapp.",
-                "linkedin.",
-                "twitter.",
-                "x.com/",
-            )
-        ):
+        label = strip_tags(inner)
+        if _is_blocked_external(url):
             continue
-        label = normalizar(strip_tags(inner))
-        if any(
-            x in label or x in low
-            for x in ("edital", "concurso", "inscricao", "inscricoes", "processo seletivo")
-        ):
+
+        if _is_specific_official_url(url, label):
             return url
-        if fallback is None:
-            fallback = url
-    return fallback
+
+        generic_candidates.append(url)
+
+    # Se o PCI só informa a homepage da banca/órgão, tenta localizar
+    # a página específica do processo antes de publicar como officialUrl.
+    seen = set()
+    for base_url in generic_candidates[:3]:
+        if base_url in seen:
+            continue
+        seen.add(base_url)
+        try:
+            external_page = fetch(base_url)
+        except Exception:
+            continue
+        resolved = _find_specific_link_on_page(external_page, base_url, title)
+        if resolved:
+            return resolved
+
+    return None
 
 
 def _extract_vacancies(text: str):
@@ -324,7 +438,7 @@ def collect_pci() -> list[dict]:
             specialty = "Medicina"
 
         organization = label.strip() if label.strip() else title.split(" - ")[0][:140]
-        official_url = _pci_official_url(detail_page)
+        official_url = _pci_official_url(detail_page, title)
         fp = fingerprint("pci", absolute)
 
         out.append({
