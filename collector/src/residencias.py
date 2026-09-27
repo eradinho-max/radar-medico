@@ -233,7 +233,10 @@ def _extract_first_official_document(page: str, base_url: str):
     for href, label in re.findall(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([\s\S]*?)</a>', page, flags=re.I):
         lbl = clean(label)
         absolute = urljoin(base_url, html.unescape(href))
-        if re.search(r"edital|documento|download|pdf", lbl + " " + absolute, flags=re.I):
+        target = (lbl + " " + absolute).lower()
+        if absolute.lower().endswith(".pdf"):
+            return absolute
+        if re.search(r"\bedital\b", target, flags=re.I) and absolute != base_url:
             return absolute
     return None
 
@@ -375,7 +378,7 @@ def collect_passapro(limit_details: int = 30) -> list[dict]:
             "editalPdf": detail.get("officialUrl") if (detail.get("officialUrl") or "").lower().endswith(".pdf") else None,
             "sourceUrl": source_url,
             "sourceName": "PassaPro — descoberta auxiliar",
-            "sourceType": "official" if detail.get("officialUrl") else "aggregator",
+            "sourceType": "aggregator",
             "updatedAt": datetime.now(timezone.utc).isoformat(),
             "fingerprint": key,
         })

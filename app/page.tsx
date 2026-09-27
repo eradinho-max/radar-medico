@@ -439,7 +439,7 @@ export default function Home() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {item.sourceType === "official"
+                          {item.officialUrl
                             ? "Abrir fonte oficial"
                             : "Abrir descoberta"}
                         </a>
@@ -591,7 +591,11 @@ export default function Home() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {item.editalPdf ? "Abrir edital" : item.officialUrl ? "Abrir fonte oficial" : "Abrir descoberta"}
+                          {item.editalPdf
+                            ? "Abrir edital"
+                            : item.officialUrl
+                              ? "Abrir fonte oficial"
+                              : "Abrir descoberta"}
                         </a>
                       ) : (
                         <span className="button secondary">Sem link externo</span>
