@@ -10,7 +10,9 @@ from .residencias import clean, fetch, fp, normalize, parse_deadline, parse_mone
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "residency_sources.json"
 ACTIVE_TERMS = ("edital", "processo seletivo", "seleção", "selecao", "inscrições", "inscricoes", "vagas", "remanescente", "residência médica", "residencia medica")
-EXCLUDE_TERMS = ("multiprofissional", "uniprofissional", "odontologia", "enfermagem", "fisioterapia", "psicologia", "farmácia", "farmacia")\nACCESSORY_TERMS = ("resultado", "gabarito", "convocacao", "convocação", "recurso", "homologacao", "homologação", "classificacao", "classificação", "segunda chamada", "chamada final")\nGENERIC_LABELS = ("abrir", "download", "clique aqui", "ver arquivo", "arquivo")
+EXCLUDE_TERMS = ("multiprofissional", "uniprofissional", "odontologia", "enfermagem", "fisioterapia", "psicologia", "farmácia", "farmacia")
+ACCESSORY_TERMS = ("resultado", "gabarito", "convocacao", "convocação", "recurso", "homologacao", "homologação", "classificacao", "classificação", "segunda chamada", "chamada final")
+GENERIC_LABELS = ("abrir", "download", "clique aqui", "ver arquivo", "arquivo")
 
 def load_sources() -> list[dict]:
     data = json.loads(CONFIG.read_text(encoding="utf-8"))
