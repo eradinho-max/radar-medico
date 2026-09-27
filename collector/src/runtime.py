@@ -260,6 +260,72 @@ def _is_specific_official_url(url: str, label: str = "") -> bool:
     return False
 
 
+def _looks_generic_destination(url: str) -> bool:
+    from urllib.parse import urlparse
+    parsed = urlparse(url or "")
+    path = (parsed.path or "/").lower().rstrip("/")
+
+    if not parsed.scheme.startswith("http") or not parsed.netloc:
+        return True
+
+    generic_paths = {
+        "",
+        "/",
+        "/diario",
+        "/concursos",
+        "/concurso",
+        "/processos-seletivos",
+        "/processo-seletivo",
+        "/proximos.jsp",
+        "/editais",
+        "/publicacoes",
+    }
+    if path in generic_paths:
+        return True
+
+    # URL montada incorretamente com outro domínio dentro do path.
+    if re.search(r"(?:www\.)?[a-z0-9.-]+\.(?:com|org|gov|net)\.br", path):
+        return True
+
+    return False
+
+
+def _validate_official_target(url: str, title: str) -> bool:
+    if not url or _is_blocked_external(url) or _looks_generic_destination(url):
+        return False
+
+    if not _is_specific_official_url(url, title):
+        return False
+
+    try:
+        page = fetch(url)
+    except Exception:
+        # PDF e URLs fortemente específicas podem ser mantidas mesmo se o servidor
+        # bloquear o robô, desde que a estrutura da URL seja específica.
+        return url.lower().split("?")[0].endswith(".pdf")
+
+    page_text = normalizar(strip_tags(page)[:50000])
+    title_words = _title_keywords(title)
+
+    # Exige evidência mínima de que a página realmente pertence ao certame.
+    matched = sum(1 for word in title_words if word in page_text)
+    has_process_signal = any(
+        signal in page_text
+        for signal in (
+            "edital",
+            "concurso publico",
+            "processo seletivo",
+            "servico militar voluntario",
+            "oficial rm2",
+            "oficiais rm2",
+            "aviso de convocacao",
+        )
+    )
+    has_current_year = str(date.today().year) in page_text or str(date.today().year + 1) in page_text
+
+    return has_process_signal and has_current_year and matched >= 1
+
+
 def _title_keywords(title: str) -> list[str]:
     stop = {
         "abre", "abrem", "com", "para", "vagas", "vaga", "salarios", "salario",
@@ -321,7 +387,7 @@ def _pci_official_url(page: str, title: str):
         if _is_blocked_external(url):
             continue
 
-        if _is_specific_official_url(url, label):
+        if _is_specific_official_url(url, label) and _validate_official_target(url, title):
             return url
 
         generic_candidates.append(url)
@@ -338,7 +404,7 @@ def _pci_official_url(page: str, title: str):
         except Exception:
             continue
         resolved = _find_specific_link_on_page(external_page, base_url, title)
-        if resolved:
+        if resolved and _validate_official_target(resolved, title):
             return resolved
 
     return None
