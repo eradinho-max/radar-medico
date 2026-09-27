@@ -7,12 +7,16 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from pathlib import Path
 
-PROFILE_PATH = Path(__file__).resolve().parents[1] / "config" / "my_radar.json"
+DEFAULT_PROFILE_PATH = Path(__file__).resolve().parents[1] / "config" / "my_radar.json"
+
+def profile_path() -> Path:
+    configured = os.environ.get("RADAR_PROFILE_PATH", "").strip()
+    return Path(configured) if configured else DEFAULT_PROFILE_PATH
 
 
 def load_profile() -> dict:
     try:
-        return json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+        return json.loads(profile_path().read_text(encoding="utf-8"))
     except Exception:
         return {
             "enabled": True,
