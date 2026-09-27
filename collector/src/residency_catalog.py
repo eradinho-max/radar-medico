@@ -11,7 +11,7 @@ from .residencias import clean, fetch, fp, normalize, parse_deadline, parse_mone
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "residency_sources.json"
 ACTIVE_TERMS = ("edital", "processo seletivo", "seleção", "selecao", "inscrições", "inscricoes", "vagas", "remanescente", "residência médica", "residencia medica")
 EXCLUDE_TERMS = ("multiprofissional", "uniprofissional", "odontologia", "enfermagem", "fisioterapia", "psicologia", "farmácia", "farmacia")
-ACCESSORY_TERMS = ("resultado", "gabarito", "convocacao", "convocação", "recurso", "homologacao", "homologação", "classificacao", "classificação", "segunda chamada", "chamada final")
+ACCESSORY_TERMS = ("resultado", "gabarito", "convocacao", "convocação", "recurso", "homologacao", "homologação", "classificacao", "classificação", "segunda chamada", "chamada final", "adendo", "confirmacao de inscricoes", "confirmação de inscrições", "local de prova", "comprovante de inscricao", "comprovante de inscrição")
 GENERIC_LABELS = ("abrir", "download", "clique aqui", "ver arquivo", "arquivo")
 
 def load_sources() -> list[dict]:
@@ -54,6 +54,9 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
             n = normalize(text)
 
             if any(normalize(x) in n for x in ACCESSORY_TERMS):
+                continue
+            found_years = [int(y) for y in re.findall(r"\b20\d{2}\b", text)]
+            if found_years and max(found_years) < year:
                 continue
             if normalize(label) in {normalize(x) for x in GENERIC_LABELS}:
                 url_name = absolute.rsplit("/", 1)[-1].split("?")[0].replace("-", " ").replace("_", " ")
