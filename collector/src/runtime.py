@@ -213,6 +213,9 @@ def _pci_official_url(page: str):
                 "telegram.",
                 "wa.me/",
                 "whatsapp.",
+                "linkedin.",
+                "twitter.",
+                "x.com/",
             )
         ):
             continue
@@ -256,6 +259,10 @@ def collect_pci() -> list[dict]:
         primary_text = _pci_primary_text(detail_page)
         h1 = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", detail_page, flags=re.I)
         title = strip_tags(h1.group(1)) if h1 else ""
+        if not title.strip():
+            title_tag = re.search(r"<title[^>]*>([\s\S]*?)</title>", detail_page, flags=re.I)
+            title = strip_tags(title_tag.group(1)) if title_tag else ""
+            title = re.sub(r"\s*[-|]\s*PCI Concursos.*$", "", title, flags=re.I).strip()
         if not title.strip():
             title = _pci_title_from_url(absolute)
         if not title.strip():
