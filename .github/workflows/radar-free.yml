@@ -46,9 +46,11 @@ jobs:
           gh release download radar-data --pattern "opportunities.json" --dir runtime || true
           gh release download radar-data --pattern "residencies.json" --dir runtime || true
           gh release download radar-data --pattern "state.json" --dir runtime || true
+          gh release download radar-data --pattern "my-radar.json" --dir runtime || true
           test -f runtime/opportunities.json || echo '{"updatedAt":null,"items":[]}' > runtime/opportunities.json
           test -f runtime/residencies.json || echo '{"updatedAt":null,"items":[]}' > runtime/residencies.json
           test -f runtime/state.json || echo '{"updatedAt":null}' > runtime/state.json
+          test -f runtime/my-radar.json || cp collector/config/my_radar.json runtime/my-radar.json
 
       - name: Collect data
         env:
@@ -61,6 +63,7 @@ jobs:
           RADAR_EMAIL_TO: ${{ secrets.RADAR_EMAIL_TO }}
           GMAIL_SMTP_USER: ${{ secrets.GMAIL_SMTP_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RADAR_PROFILE_PATH: runtime/my-radar.json
         run: python -m collector.src.notify
 
       - name: Publish data
