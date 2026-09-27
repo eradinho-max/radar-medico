@@ -13,6 +13,7 @@ from urllib.parse import urljoin
 from .classificador import detectar_especialidades, eh_medico
 from .modelos import Ficha, normalizar
 from .residencias import collect as collect_residencies
+from .residency_catalog import collect_catalog_sources
 
 UA = "RadarMedico/0.5 (+https://radar-medico.vercel.app)"
 
@@ -265,7 +266,8 @@ def main():
         "auxiliaryCount": sum(1 for i in collected if i["sourceType"] == "aggregator"),
         "items": collected,
     }
-    residencies = collect_residencies()
+    catalog_residencies, residency_source_health = collect_catalog_sources()
+    residencies = collect_residencies() + catalog_residencies
     residencies = [
         i for i in residencies
         if i.get("status") in ("open", "upcoming")
@@ -319,6 +321,7 @@ def main():
 
     save_json(runtime / "opportunities.json", payload)
     save_json(runtime / "residencies.json", residency_payload)
+    save_json(runtime / "residency-source-health.json", {"updatedAt": now, "sources": residency_source_health})
     save_json(
         runtime / "changes.json",
         {"updatedAt": now, "count": len(all_changes), "changes": all_changes},
@@ -328,6 +331,8 @@ def main():
         "lastRun": {
             "contestsCollected": len(collected),
             "residenciesCollected": len(residencies),
+            "residencySourcesChecked": len(residency_source_health),
+            "residencySourcesHealthy": sum(1 for s in residency_source_health if s.get("status") == "ok"),
             "changes": len(all_changes),
         },
         "retentionNote": "Feeds públicos contêm itens abertos/futuros detectados na execução.",

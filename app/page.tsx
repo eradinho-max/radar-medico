@@ -62,12 +62,19 @@ export default function Home() {
   const [resStatus, setResStatus] = useState("");
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [resSourceHealth, setResSourceHealth] = useState<{
+    total: number;
+    healthy: number;
+    errors: number;
+    byRegion: Record<string, number>;
+  }>({ total: 0, healthy: 0, errors: 0, byRegion: {} });
 
   useEffect(() => {
     Promise.all([
       fetch("/api/opportunities").then((r) => r.json()),
       fetch("/api/residencies").then((r) => r.json()),
-    ]).then(([contestData, residencyData]) => {
+      fetch("/api/residency-sources").then((r) => r.json()),
+    ]).then(([contestData, residencyData, sourceHealth]) => {
       setItems(contestData.items ?? []);
       setMeta({
         mode: contestData.mode ?? "demo",
@@ -77,6 +84,12 @@ export default function Home() {
       });
 
       setResidencies(residencyData.items ?? []);
+      setResSourceHealth({
+        total: sourceHealth.total ?? 0,
+        healthy: sourceHealth.healthy ?? 0,
+        errors: sourceHealth.errors ?? 0,
+        byRegion: sourceHealth.byRegion ?? {},
+      });
       setResMeta({
         mode: residencyData.mode ?? "initializing",
         updatedAt: residencyData.updatedAt ?? null,
@@ -638,12 +651,12 @@ export default function Home() {
           <div>
             <strong>02</strong>
             <h3>Residências</h3>
-            <p>PassaPro como descoberta, links oficiais extraídos e expansão para ENARE/COREME.</p>
+            <p>{resSourceHealth.total || "—"} fontes institucionais no catálogo nacional; {resSourceHealth.healthy || "—"} responderam na última coleta.</p>
           </div>
           <div>
             <strong>03</strong>
-            <h3>Próxima onda</h3>
-            <p>Universidades, hospitais públicos, COREME e processos estaduais/institucionais.</p>
+            <h3>Cobertura regional</h3>
+            <p>{Object.entries(resSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "Aguardando primeira coleta do catálogo nacional."}</p>
           </div>
         </div>
       </section>

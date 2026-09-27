@@ -76,6 +76,7 @@ jobs:
         run: |
           gh release upload radar-data runtime/opportunities.json --clobber
           gh release upload radar-data runtime/residencies.json --clobber
+          gh release upload radar-data runtime/residency-source-health.json --clobber
           gh release upload radar-data runtime/changes.json --clobber
           gh release upload radar-data runtime/state.json --clobber
 
