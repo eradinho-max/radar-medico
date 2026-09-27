@@ -57,8 +57,26 @@ export default function MyRadarPanel({
   residencyMatches,
 }: Props) {
   const [draft, setDraft] = useState<MyRadarProfile>(profile);
+  const [pin, setPin] = useState("");
+  const [syncState, setSyncState] = useState<"idle" | "saving" | "ok" | "error" | "unconfigured">("idle");
+  const [syncMessage, setSyncMessage] = useState("");
 
   useEffect(() => setDraft(profile), [profile]);
+
+  useEffect(() => {
+    fetch("/api/my-radar", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.configured) {
+          setSyncState("unconfigured");
+          return;
+        }
+        if (data.profile) {
+          setSyncMessage("Perfil diário disponível para sincronização.");
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const sortedSpecialties = useMemo(
     () => Array.from(new Set([...BASE_SPECIALTIES, ...specialties.filter(Boolean)])).sort(),
@@ -76,6 +94,40 @@ export default function MyRadarPanel({
   function save() {
     localStorage.setItem("radar:my-radar", JSON.stringify(draft));
     onChange(draft);
+  }
+
+  async function syncDaily() {
+    save();
+    if (!pin.trim()) {
+      setSyncState("error");
+      setSyncMessage("Digite o PIN administrativo.");
+      return;
+    }
+
+    setSyncState("saving");
+    setSyncMessage("Salvando perfil diário...");
+
+    try {
+      const response = await fetch("/api/my-radar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin, profile: draft }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setSyncState(response.status === 503 ? "unconfigured" : "error");
+        setSyncMessage(data.error || "Não foi possível sincronizar.");
+        return;
+      }
+
+      setSyncState("ok");
+      setSyncMessage("Alertas diários atualizados. O próximo ciclo já usará este perfil.");
+      setPin("");
+    } catch {
+      setSyncState("error");
+      setSyncMessage("Falha de conexão ao sincronizar o perfil diário.");
+    }
   }
 
   function reset() {
@@ -154,9 +206,27 @@ export default function MyRadarPanel({
         </div>
 
         <div className="myRadarActions">
-          <button className="button primary" type="button" onClick={save}>Salvar Meu Radar</button>
+          <button className="button primary" type="button" onClick={save}>Salvar neste dispositivo</button>
           <button className="button secondary" type="button" onClick={reset}>Restaurar padrão</button>
           <label className="matchToggle"><input type="checkbox" checked={onlyMatches} onChange={(e) => onOnlyMatchesChange(e.target.checked)}/> Mostrar somente compatíveis</label>
+        </div>
+
+        <div className="dailySync">
+          <div>
+            <h3>Alertas diários</h3>
+            <p>Para o robô usar este mesmo perfil mesmo com o navegador fechado, sincronize o perfil operacional.</p>
+          </div>
+          <div className="dailySyncControls">
+            <input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="PIN administrativo" autoComplete="off"/>
+            <button className="button primary" type="button" onClick={syncDaily} disabled={syncState === "saving"}>
+              {syncState === "saving" ? "Sincronizando..." : "Ativar / atualizar alertas diários"}
+            </button>
+          </div>
+          <small className={`syncStatus ${syncState}`}>
+            {syncState === "unconfigured"
+              ? "A ativação inicial do envio diário ainda precisa ser configurada uma única vez."
+              : syncMessage || "O e-mail de destino fica protegido e não aparece nesta página."}
+          </small>
         </div>
 
         <div className="matchSummary">
