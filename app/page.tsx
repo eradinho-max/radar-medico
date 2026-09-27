@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import type { ResidencyOpportunity } from "@/lib/residency-types";
 
+const UF_OPTIONS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
+  "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+];
+
 const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -62,33 +67,13 @@ export default function Home() {
   const [resStatus, setResStatus] = useState("");
 
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [contestSourceHealth, setContestSourceHealth] = useState<{
-    total: number;
-    healthy: number;
-    errors: number;
-    byRegion: Record<string, number>;
-  }>({ total: 0, healthy: 0, errors: 0, byRegion: {} });
-  const [resSourceHealth, setResSourceHealth] = useState<{
-    total: number;
-    healthy: number;
-    errors: number;
-    byRegion: Record<string, number>;
-  }>({ total: 0, healthy: 0, errors: 0, byRegion: {} });
 
   useEffect(() => {
     Promise.all([
       fetch("/api/opportunities").then((r) => r.json()),
       fetch("/api/residencies").then((r) => r.json()),
-      fetch("/api/residency-sources").then((r) => r.json()),
-      fetch("/api/contest-sources").then((r) => r.json()),
-    ]).then(([contestData, residencyData, sourceHealth, contestHealth]) => {
+    ]).then(([contestData, residencyData]) => {
       setItems(contestData.items ?? []);
-      setContestSourceHealth({
-        total: contestHealth.total ?? 0,
-        healthy: contestHealth.healthy ?? 0,
-        errors: contestHealth.errors ?? 0,
-        byRegion: contestHealth.byRegion ?? {},
-      });
       setMeta({
         mode: contestData.mode ?? "demo",
         updatedAt: contestData.updatedAt ?? null,
@@ -97,12 +82,6 @@ export default function Home() {
       });
 
       setResidencies(residencyData.items ?? []);
-      setResSourceHealth({
-        total: sourceHealth.total ?? 0,
-        healthy: sourceHealth.healthy ?? 0,
-        errors: sourceHealth.errors ?? 0,
-        byRegion: sourceHealth.byRegion ?? {},
-      });
       setResMeta({
         mode: residencyData.mode ?? "initializing",
         updatedAt: residencyData.updatedAt ?? null,
@@ -124,10 +103,7 @@ export default function Home() {
     localStorage.setItem("radar:favorites", JSON.stringify(next));
   }
 
-  const states = useMemo(
-    () => Array.from(new Set(items.map((i) => i.state).filter(Boolean))).sort(),
-    [items],
-  );
+  const states = UF_OPTIONS;
   const specialties = useMemo(
     () => Array.from(new Set(items.map((i) => i.specialty).filter(Boolean))).sort(),
     [items],
@@ -153,13 +129,7 @@ export default function Home() {
     [items, query, state, specialty, salary, status],
   );
 
-  const resStates = useMemo(
-    () =>
-      Array.from(
-        new Set(residencies.map((i) => i.state).filter((x) => x && x !== "BR")),
-      ).sort(),
-    [residencies],
-  );
+  const resStates = UF_OPTIONS;
 
   const resSpecialties = useMemo(
     () =>
@@ -267,8 +237,8 @@ export default function Home() {
           </div>
           <div className="trustRow">
             <span>Concursos + Residências</span>
-            <span>Atualização automática 3×/dia</span>
-            <span>Custo operacional R$ 0</span>
+            <span>Atualização automática ao longo do dia</span>
+            <span>Links oficiais quando validados</span>
           </div>
         </div>
 
@@ -627,24 +597,26 @@ export default function Home() {
 
       <section className="shell alertSection" id="alertas">
         <div>
-          <div className="eyebrow cyan">ALERTAS</div>
-          <h2>Um motor para dois radares.</h2>
+          <div className="eyebrow cyan">COMO FUNCIONA</div>
+          <h2>O Radar trabalha sozinho todos os dias.</h2>
           <p>
-            A mesma execução compara novidades e alterações de concursos e
-            residências. O envio continua opcional por Gmail SMTP, sem plataforma paga.
+            As fontes são verificadas automaticamente ao longo do dia. Quando aparece
+            um novo concurso, residência, alteração de prazo ou retificação, o Radar
+            atualiza a lista sem você precisar cadastrar o edital manualmente.
           </p>
           <div className="featureList">
-            <span>✓ Novos concursos</span>
-            <span>✓ Novas residências</span>
-            <span>✓ Alterações de prazo e edital</span>
+            <span>✓ Novas oportunidades entram automaticamente</span>
+            <span>✓ Editais e retificações são comparados</span>
+            <span>✓ Seus filtros ajudam a encontrar o que interessa</span>
           </div>
         </div>
 
         <div className="alertPanel">
-          <label>Infraestrutura</label>
+          <label>Próximo passo: seus alertas</label>
           <small>
-            GitHub Actions + GitHub Release Assets + Vercel Hobby. Nenhum banco,
-            API ou serviço de e-mail pago é necessário para o funcionamento básico.
+            Você poderá cadastrar estado, especialidade, salário ou bolsa mínima e
+            escolher se quer receber concursos, residências ou ambos. O Radar fará
+            a verificação diária e avisará somente quando houver algo compatível.
           </small>
         </div>
       </section>
@@ -652,11 +624,12 @@ export default function Home() {
       <section className="shell section" id="fontes">
         <div className="sectionHead">
           <div>
-            <div className="eyebrow">COBERTURA</div>
-            <h2>Fontes separadas por domínio.</h2>
+            <div className="eyebrow">FONTES</div>
+            <h2>Onde o Radar procura.</h2>
             <p>
-              Concursos e residências compartilham a infraestrutura, mas têm
-              coletores e critérios próprios.
+              O monitor acompanha páginas públicas de órgãos, secretarias, hospitais,
+              universidades, bancas e outras fontes institucionais. Agregadores são
+              usados apenas para descoberta quando ajudam a localizar uma oportunidade.
             </p>
           </div>
         </div>
@@ -665,25 +638,25 @@ export default function Home() {
           <div>
             <strong>01</strong>
             <h3>Concursos</h3>
-            <p>{contestSourceHealth.total || "—"} fontes oficiais/configuráveis; {contestSourceHealth.healthy || "—"} responderam na última coleta.</p>
+            <p>Órgãos públicos, secretarias, prefeituras, hospitais, bancas e seleções nacionais.</p>
           </div>
           <div>
             <strong>02</strong>
             <h3>Residências</h3>
-            <p>{resSourceHealth.total || "—"} fontes institucionais no catálogo nacional; {resSourceHealth.healthy || "—"} responderam na última coleta.</p>
+            <p>ENARE, COREME, universidades, hospitais universitários e processos institucionais.</p>
           </div>
           <div>
             <strong>03</strong>
-            <h3>Cobertura regional</h3>
-            <p>Concursos: {Object.entries(contestSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "aguardando"}<br/>Residências: {Object.entries(resSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "aguardando"}</p>
+            <h3>Validação</h3>
+            <p>Quando o edital oficial específico é confirmado, o card abre diretamente o processo correspondente.</p>
           </div>
         </div>
       </section>
 
       <footer>
         <div className="shell">
-          <span>Radar Médico · Concursos + Residências · FREE-ONLY</span>
-          <span>Fontes auxiliares devem ser confirmadas no edital oficial.</span>
+          <span>Radar Médico · Concursos + Residências</span>
+          <span>Confira sempre as regras e prazos no edital correspondente.</span>
         </div>
       </footer>
     </main>
