@@ -60,3 +60,35 @@ Isso pode ser feito pelo assistente diretamente no repositório após o usuário
 - Gmail App Password: GitHub Secret.
 - Preferências não sensíveis: arquivo JSON.
 - Nenhuma credencial é enviada ao navegador.
+
+## Sincronização pelo próprio site
+
+A V1 inclui `POST /api/my-radar`.
+
+O painel “Meu Radar” pode atualizar o perfil operacional sem commit e sem novo deploy.
+O perfil é salvo como asset `my-radar.json` na release operacional `radar-data`.
+
+### Ativação inicial única no Vercel
+
+São necessárias duas variáveis secretas:
+
+- `RADAR_ADMIN_PIN`: PIN escolhido pelo administrador para autorizar alterações do perfil.
+- `RADAR_GITHUB_TOKEN`: token fine-grained com permissão de leitura/escrita de Contents apenas no repositório `radar-medico`.
+
+Depois dessa configuração:
+1. usuário abre “Meu Radar”;
+2. escolhe preferências;
+3. digita o PIN;
+4. clica “Ativar / atualizar alertas diários”;
+5. a API atualiza `my-radar.json` na release;
+6. a próxima execução do workflow baixa o novo perfil automaticamente.
+
+Nenhum deploy é disparado quando o perfil muda.
+
+### Credenciais de e-mail
+Continuam separadas:
+- `RADAR_EMAIL_TO`
+- `GMAIL_SMTP_USER`
+- `GMAIL_APP_PASSWORD`
+
+Essas credenciais ficam somente em GitHub Secrets.
