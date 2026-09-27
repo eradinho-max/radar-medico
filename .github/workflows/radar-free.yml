@@ -1,10 +1,9 @@
-name: Radar Médico — FREE ONLY
+name: Radar Medico Free
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: "17 10,16,22 * * *"
@@ -13,26 +12,9 @@ permissions:
   contents: write
 
 jobs:
-  validate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Run regression tests
-        run: python -m unittest discover -s collector/tests -v
-      - name: Compile collector
-        run: python -m compileall -q collector
-
   radar:
-    if: github.event_name != 'pull_request' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -43,15 +25,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run regression tests
-        run: python -m unittest discover -s collector/tests -v
+      - name: Test collector
+        run: |
+          python -m unittest discover -s collector/tests -v
+          python -m compileall -q collector
 
-      - name: Ensure operational release
+      - name: Ensure data release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! gh release view radar-data >/dev/null 2>&1; then
-            gh release create radar-data               --title "Radar Médico — dados operacionais"               --notes "Assets atualizados automaticamente pelo workflow FREE-ONLY."               --target "${GITHUB_SHA}"
+            gh release create radar-data --title "Radar Medico - dados operacionais" --notes "Dados atualizados automaticamente." --target "$GITHUB_SHA"
           fi
 
       - name: Restore previous state
@@ -62,37 +46,24 @@ jobs:
           gh release download radar-data --pattern "opportunities.json" --dir runtime || true
           gh release download radar-data --pattern "residencies.json" --dir runtime || true
           gh release download radar-data --pattern "state.json" --dir runtime || true
-          if [ ! -f runtime/opportunities.json ]; then
-            printf '{"updatedAt":null,"items":[]}
-' > runtime/opportunities.json
-          fi
-          if [ ! -f runtime/residencies.json ]; then
-            printf '{"updatedAt":null,"items":[]}
-' > runtime/residencies.json
-          fi
-          if [ ! -f runtime/state.json ]; then
-            printf '{"updatedAt":null}
-' > runtime/state.json
-          fi
+          test -f runtime/opportunities.json || echo '{"updatedAt":null,"items":[]}' > runtime/opportunities.json
+          test -f runtime/residencies.json || echo '{"updatedAt":null,"items":[]}' > runtime/residencies.json
+          test -f runtime/state.json || echo '{"updatedAt":null}' > runtime/state.json
 
-      - name: Collect and normalize
+      - name: Collect data
         env:
           PYTHONPATH: .
         run: python -m collector.src.runtime --runtime runtime
 
-      - name: Send optional free Gmail alert
+      - name: Optional email alert
         env:
           RADAR_RUNTIME: runtime
           RADAR_EMAIL_TO: ${{ secrets.RADAR_EMAIL_TO }}
           GMAIL_SMTP_USER: ${{ secrets.GMAIL_SMTP_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          RADAR_ALERT_DOMAINS: ${{ vars.RADAR_ALERT_DOMAINS }}
-          RADAR_ALERT_STATES: ${{ vars.RADAR_ALERT_STATES }}
-          RADAR_ALERT_SPECIALTIES: ${{ vars.RADAR_ALERT_SPECIALTIES }}
-          RADAR_ALERT_MIN_VALUE: ${{ vars.RADAR_ALERT_MIN_VALUE }}
         run: python -m collector.src.notify
 
-      - name: Publish operational assets
+      - name: Publish data
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -103,7 +74,5 @@ jobs:
           gh release upload radar-data runtime/changes.json --clobber
           gh release upload radar-data runtime/state.json --clobber
 
-      - name: Free-only guard
-        run: |
-          echo "FREE_ONLY=1"
-          echo "Coleta, persistência e execução concluídas sem serviço pago."
+      - name: Free only
+        run: echo "FREE_ONLY=1"
