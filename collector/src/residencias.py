@@ -77,6 +77,34 @@ OFFICIAL_OPEN_PAGES = [
         "entryType": "Não informado",
         "knownDeadline": None,
     },
+    {
+        "name": "HU Brasil / CH-UFC — Residência Médica",
+        "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-nordeste/ch-ufc/ensino-e-pesquisa/editais-1/residencia-1/EDITALN012026RESMEDVAGASNOOCUPADASNOENARE24022026.pdf",
+        "state": "CE",
+        "city": "Fortaleza",
+        "specialty": "Múltiplas especialidades",
+        "entryType": "Área de atuação / Ano adicional",
+        "knownDeadline": None,
+        "knownVacancies": "8",
+    },
+    {
+        "name": "HU Brasil / CHU-UFPA — Residência Médica",
+        "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-norte/chu-ufpa/ensino-e-pesquisa/processo-seletivo/pss-medica-2026/v-processo-seletivo-simplificado-de-residencia-medica-2026.pdf/view",
+        "state": "PA",
+        "city": "Belém",
+        "specialty": "Múltiplas especialidades",
+        "entryType": "Não informado",
+        "knownDeadline": None,
+    },
+    {
+        "name": "HU Brasil / HUL-UFS — ENARE",
+        "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-nordeste/hul-ufs/locais-de-prova-do-enare-e-enamed-2026-ja-podem-ser-consultados-2",
+        "state": "SE",
+        "city": "Aracaju / Lagarto",
+        "specialty": "Múltiplas especialidades",
+        "entryType": "Acesso direto / Pré-requisito",
+        "knownDeadline": None,
+    },
 ]
 
 EXCLUDE = (
