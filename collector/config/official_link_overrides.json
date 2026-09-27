@@ -1,0 +1,29 @@
+{
+  "overrides": [
+    {
+      "match": "4º distrito naval",
+      "url": "https://www.marinha.mil.br/com4dn/processo-seletivo-oficiaisrm22026",
+      "note": "Página oficial específica do processo de Oficiais RM2/2026."
+    },
+    {
+      "match": "1º distrito naval",
+      "url": "https://www.marinha.mil.br/com1dn/conteudo/nota-informativa-oficial-rm2",
+      "note": "Página oficial específica com Aviso de Convocação 2026 para médicos."
+    },
+    {
+      "match": "8º distrito naval",
+      "url": "https://www.marinha.mil.br/com8dn/node/100",
+      "note": "Página oficial SMV Oficiais, incluindo RM2 Médico."
+    },
+    {
+      "match": "hospital municipal dr. gil alves",
+      "url": "https://www.cotec.fadenor.com.br/informacoes/34/",
+      "note": "Página específica do concurso Edital 01/2026 na COTEC/FADENOR."
+    },
+    {
+      "match": "prefeitura de patis",
+      "url": "https://cotec-fadenor.selecao.net.br/informacoes/35/",
+      "note": "Página específica do concurso Edital 01/2026 na COTEC/FADENOR."
+    }
+  ]
+}

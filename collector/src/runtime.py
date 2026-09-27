@@ -18,6 +18,21 @@ from .contest_catalog import collect_catalog_sources as collect_contest_catalog_
 from .change_engine import build_changes
 
 UA = "RadarMedico/0.5 (+https://radar-medico.vercel.app)"
+OFFICIAL_LINK_OVERRIDES = Path(__file__).resolve().parents[1] / "config" / "official_link_overrides.json"
+
+def load_official_link_overrides() -> list[dict]:
+    try:
+        return json.loads(OFFICIAL_LINK_OVERRIDES.read_text(encoding="utf-8")).get("overrides", [])
+    except Exception:
+        return []
+
+def verified_override_for(title: str):
+    normalized = normalizar(title)
+    for item in load_official_link_overrides():
+        if normalizar(item.get("match", "")) in normalized:
+            return item.get("url")
+    return None
+
 
 OFFICIAL_SOURCES = [
     ("ministerio-saude", "Ministério da Saúde", "https://www.gov.br/saude/pt-br/acesso-a-informacao/concursos-e-selecoes"),
@@ -277,6 +292,7 @@ def _looks_generic_destination(url: str) -> bool:
         "/processos-seletivos",
         "/processo-seletivo",
         "/proximos.jsp",
+        "/edital",
         "/editais",
         "/publicacoes",
     }
@@ -297,6 +313,10 @@ def _validate_official_target(url: str, title: str) -> bool:
     if not _is_specific_official_url(url, title):
         return False
 
+    low_url = url.lower()
+    if any(x in low_url for x in ("/licitacao/", "/pregao/", "/credenciamento/", "/contratacao/")):
+        return False
+
     try:
         page = fetch(url)
     except Exception:
@@ -309,10 +329,19 @@ def _validate_official_target(url: str, title: str) -> bool:
 
     # Exige evidência mínima de que a página realmente pertence ao certame.
     matched = sum(1 for word in title_words if word in page_text)
+    negative_domain_signal = any(
+        signal in page_text
+        for signal in (
+            "modalidade pregao",
+            "modalidade - edital de credenciamento",
+            "licitacao",
+            "credenciamento de instituicoes financeiras",
+            "contratacao direta",
+        )
+    )
     has_process_signal = any(
         signal in page_text
         for signal in (
-            "edital",
             "concurso publico",
             "processo seletivo",
             "servico militar voluntario",
@@ -323,7 +352,7 @@ def _validate_official_target(url: str, title: str) -> bool:
     )
     has_current_year = str(date.today().year) in page_text or str(date.today().year + 1) in page_text
 
-    return has_process_signal and has_current_year and matched >= 1
+    return (not negative_domain_signal) and has_process_signal and has_current_year and matched >= 1
 
 
 def _title_keywords(title: str) -> list[str]:
@@ -607,7 +636,9 @@ def collect_pci() -> list[dict]:
             specialty = "Medicina"
 
         organization = label.strip() if label.strip() else title.split(" - ")[0][:140]
-        official_url = _pci_official_url(detail_page, title)
+        official_url = verified_override_for(title) or _pci_official_url(detail_page, title)
+        if official_url and not verified_override_for(title) and not _validate_official_target(official_url, title):
+            official_url = None
         fp = fingerprint("pci", absolute)
 
         out.append({
