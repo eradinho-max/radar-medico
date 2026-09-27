@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import type { ResidencyOpportunity } from "@/lib/residency-types";
+import MyRadarPanel from "./meu-radar-panel";
+import { DEFAULT_MY_RADAR, contestMatchesMyRadar, residencyMatchesMyRadar, type MyRadarProfile } from "@/lib/my-radar";
 
 const UF_OPTIONS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
@@ -67,6 +69,8 @@ export default function Home() {
   const [resStatus, setResStatus] = useState("");
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [myRadar, setMyRadar] = useState<MyRadarProfile>(DEFAULT_MY_RADAR);
+  const [onlyMyRadar, setOnlyMyRadar] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -92,6 +96,11 @@ export default function Home() {
 
     try {
       setFavorites(JSON.parse(localStorage.getItem("radar:favorites") || "[]"));
+    } catch {}
+
+    try {
+      const saved = JSON.parse(localStorage.getItem("radar:my-radar") || "null");
+      if (saved) setMyRadar({ ...DEFAULT_MY_RADAR, ...saved });
     } catch {}
   }, []);
 
@@ -120,13 +129,14 @@ export default function Home() {
             (!state || item.state === state) &&
             (!specialty || item.specialty === specialty) &&
             (!salary || (item.salary ?? 0) >= salary) &&
-            (!status || item.status === status)
+            (!status || item.status === status) &&
+            (!onlyMyRadar || contestMatchesMyRadar(item, myRadar))
           );
         })
         .sort((a, b) =>
           (a.deadline || "9999").localeCompare(b.deadline || "9999"),
         ),
-    [items, query, state, specialty, salary, status],
+    [items, query, state, specialty, salary, status, onlyMyRadar, myRadar],
   );
 
   const resStates = UF_OPTIONS;
@@ -163,7 +173,8 @@ export default function Home() {
             (!resSpecialty || item.specialty === resSpecialty) &&
             (!resEntryType || item.entryType === resEntryType) &&
             (!resStipend || (item.stipend ?? 0) >= resStipend) &&
-            (!resStatus || item.status === resStatus)
+            (!resStatus || item.status === resStatus) &&
+            (!onlyMyRadar || residencyMatchesMyRadar(item, myRadar))
           );
         })
         .sort((a, b) =>
@@ -177,7 +188,24 @@ export default function Home() {
       resEntryType,
       resStipend,
       resStatus,
+      onlyMyRadar,
+      myRadar,
     ],
+  );
+
+  const allSpecialties = useMemo(
+    () => Array.from(new Set([...specialties, ...resSpecialties])).sort(),
+    [specialties, resSpecialties],
+  );
+
+  const myContestMatches = useMemo(
+    () => items.filter((item) => contestMatchesMyRadar(item, myRadar)).length,
+    [items, myRadar],
+  );
+
+  const myResidencyMatches = useMemo(
+    () => residencies.filter((item) => residencyMatchesMyRadar(item, myRadar)).length,
+    [residencies, myRadar],
   );
 
   const activeMeta = activeTab === "concursos" ? meta : resMeta;
@@ -196,7 +224,8 @@ export default function Home() {
           </a>
           <nav>
             <a href="#radar">Radar</a>
-            <a href="#alertas">Alertas</a>
+            <a href="#meu-radar">Meu Radar</a>
+            <a href="#alertas">Como funciona</a>
             <a href="#fontes">Fontes</a>
           </nav>
           <a className="button primary small" href="#radar">
@@ -594,6 +623,16 @@ export default function Home() {
           </>
         )}
       </section>
+
+      <MyRadarPanel
+        specialties={allSpecialties}
+        profile={myRadar}
+        onChange={setMyRadar}
+        onlyMatches={onlyMyRadar}
+        onOnlyMatchesChange={setOnlyMyRadar}
+        contestMatches={myContestMatches}
+        residencyMatches={myResidencyMatches}
+      />
 
       <section className="shell alertSection" id="alertas">
         <div>

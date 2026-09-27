@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "enabled": true,
+  "domains": [
+    "contest",
+    "residency"
+  ],
+  "states": [],
+  "specialties": [],
+  "contest_min_salary": 0,
+  "residency_min_stipend": 0,
+  "only_open": true,
+  "official_only": false,
+  "notify_new": true,
+  "notify_updates": true,
+  "notify_revisions": true,
+  "digest": "immediate"
+}
