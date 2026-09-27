@@ -338,40 +338,146 @@ def _title_keywords(title: str) -> list[str]:
     return [w for w in words if w not in stop][:10]
 
 
-def _find_specific_link_on_page(page: str, base_url: str, title: str):
+def _normalize_external_url(url: str):
+    from urllib.parse import urlparse
+
+    if not url:
+        return None
+
+    # Corrige casos em que um domínio foi anexado ao path de outro site.
+    m = re.search(r"/((?:www\.)?[a-z0-9.-]+\.(?:com|org|gov|net)\.br(?:/[^ ]*)?)", url, flags=re.I)
+    if m and "://" not in m.group(1):
+        candidate = "https://" + m.group(1)
+        parsed_candidate = urlparse(candidate)
+        if parsed_candidate.netloc:
+            return candidate
+
+    return url
+
+
+def _link_context(page: str, start: int, end: int) -> str:
+    left = max(0, start - 500)
+    right = min(len(page), end + 1200)
+    return strip_tags(page[left:right])
+
+
+def _scored_links(page: str, base_url: str, title: str):
+    from urllib.parse import urlparse
+
     pat = re.compile(
         r"""<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)</a>""",
         re.I,
     )
     keywords = _title_keywords(title)
-    candidates = []
+    base_host = urlparse(base_url).netloc.lower().replace("www.", "")
+    out = []
 
-    for href, inner in pat.findall(page):
-        absolute = urljoin(base_url, html.unescape(href))
+    for match in pat.finditer(page):
+        href, inner = match.group(1), match.group(2)
+        absolute = _normalize_external_url(urljoin(base_url, html.unescape(href)))
+        if not absolute or _is_blocked_external(absolute):
+            continue
+
+        parsed = urlparse(absolute)
+        host = parsed.netloc.lower().replace("www.", "")
+        if host != base_host:
+            continue
+
         label = strip_tags(inner)
-        if _is_blocked_external(absolute):
+        context = _link_context(page, match.start(), match.end())
+        evidence = normalizar(f"{label} {context} {absolute}")
+
+        score = 0
+        score += sum(3 for keyword in keywords if keyword in evidence)
+        if any(
+            term in evidence
+            for term in (
+                "edital",
+                "concurso",
+                "processo seletivo",
+                "selecao",
+                "smv",
+                "rm2",
+                "rm3",
+                "aviso de convocacao",
+                "mais informacoes",
+            )
+        ):
+            score += 5
+        if str(date.today().year) in evidence or str(date.today().year + 1) in evidence:
+            score += 3
+        if absolute.lower().split("?")[0].endswith(".pdf"):
+            score += 4
+        if re.search(r"/(?:node|informacoes|publicacao|publicacoes|edital|processo)/[^/]+", parsed.path.lower()):
+            score += 3
+
+        out.append((score, absolute, label, context))
+
+    out.sort(key=lambda item: item[0], reverse=True)
+    return out
+
+
+def _find_specific_link_on_page(page: str, base_url: str, title: str):
+    for score, absolute, label, _context in _scored_links(page, base_url, title):
+        if score < 5:
+            continue
+        if _looks_generic_destination(absolute):
             continue
         if not _is_specific_official_url(absolute, label):
             continue
+        if _validate_official_target(absolute, title):
+            return absolute
+    return None
 
-        evidence = normalizar(f"{label} {absolute}")
-        score = 0
-        if any(x in evidence for x in ("edital", "concurso", "processo seletivo", "selecao", "smv", "rm2", "rm3")):
-            score += 5
-        score += sum(2 for keyword in keywords if keyword in evidence)
-        if str(date.today().year) in evidence or str(date.today().year + 1) in evidence:
-            score += 2
-        if absolute.lower().endswith(".pdf"):
-            score += 2
 
-        candidates.append((score, absolute))
+def _discover_specific_official(base_url: str, title: str):
+    from urllib.parse import urlparse
 
-    if not candidates:
+    base_url = _normalize_external_url(base_url)
+    if not base_url or _is_blocked_external(base_url):
         return None
 
-    candidates.sort(key=lambda item: item[0], reverse=True)
-    best_score, best_url = candidates[0]
-    return best_url if best_score >= 5 else None
+    # Alguns organizadores migraram o front-end, mas preservam o conteúdo.
+    alternates = [base_url]
+    if "cotec.fadenor.com.br" in base_url:
+        alternates.append(base_url.replace("www.cotec.fadenor.com.br", "cotec-fadenor.selecao.net.br"))
+        alternates.append(base_url.replace("cotec.fadenor.com.br", "cotec-fadenor.selecao.net.br"))
+
+    visited = set()
+    queue = [(url, 0) for url in alternates]
+
+    while queue:
+        current, depth = queue.pop(0)
+        if current in visited or depth > 2:
+            continue
+        visited.add(current)
+
+        try:
+            page = fetch(current)
+        except Exception:
+            continue
+
+        direct = _find_specific_link_on_page(page, current, title)
+        if direct:
+            return direct
+
+        if depth >= 2:
+            continue
+
+        current_host = urlparse(current).netloc.lower().replace("www.", "")
+        for score, absolute, _label, context in _scored_links(page, current, title)[:10]:
+            if score < 5:
+                continue
+            parsed = urlparse(absolute)
+            host = parsed.netloc.lower().replace("www.", "")
+            if host != current_host:
+                continue
+
+            # Uma página geral de concursos pode ser intermediária, mas nunca final.
+            if absolute not in visited:
+                queue.append((absolute, depth + 1))
+
+    return None
 
 
 def _pci_official_url(page: str, title: str):
@@ -392,19 +498,16 @@ def _pci_official_url(page: str, title: str):
 
         generic_candidates.append(url)
 
-    # Se o PCI só informa a homepage da banca/órgão, tenta localizar
-    # a página específica do processo antes de publicar como officialUrl.
+    # Se o PCI só informa homepage/listagem, navega de forma limitada
+    # dentro do domínio até localizar o edital/processo específico.
     seen = set()
-    for base_url in generic_candidates[:3]:
-        if base_url in seen:
+    for base_url in generic_candidates[:4]:
+        normalized = _normalize_external_url(base_url)
+        if not normalized or normalized in seen:
             continue
-        seen.add(base_url)
-        try:
-            external_page = fetch(base_url)
-        except Exception:
-            continue
-        resolved = _find_specific_link_on_page(external_page, base_url, title)
-        if resolved and _validate_official_target(resolved, title):
+        seen.add(normalized)
+        resolved = _discover_specific_official(normalized, title)
+        if resolved:
             return resolved
 
     return None
