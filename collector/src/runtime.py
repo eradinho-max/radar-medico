@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 
 from .classificador import detectar_especialidades, eh_medico
 from .modelos import Ficha, normalizar
+from .residencias import collect as collect_residencies
 
 UA = "RadarMedico/0.5 (+https://radar-medico.vercel.app)"
 
@@ -233,6 +234,12 @@ def main():
 
     previous_payload = load_json(runtime / "opportunities.json", {"items": []})
     previous = {i.get("id"): i for i in previous_payload.get("items", []) if i.get("id")}
+    previous_residency_payload = load_json(runtime / "residencies.json", {"items": []})
+    previous_residencies = {
+        i.get("id"): i
+        for i in previous_residency_payload.get("items", [])
+        if i.get("id")
+    }
 
     collected = dedupe(collect_govbr() + collect_pci())
     # Radar operacional: mostra abertos/futuros. Fechados ficam fora do feed.
@@ -258,14 +265,78 @@ def main():
         "auxiliaryCount": sum(1 for i in collected if i["sourceType"] == "aggregator"),
         "items": collected,
     }
+    residencies = collect_residencies()
+    residencies = [
+        i for i in residencies
+        if i.get("status") in ("open", "upcoming")
+    ]
+    residencies.sort(
+        key=lambda i: (
+            i.get("deadline") or "9999-12-31",
+            i.get("state") or "ZZ",
+            i.get("title") or "",
+        )
+    )
+
+    residency_changes = []
+    residency_fields = (
+        "title", "institution", "state", "specialty", "entryType",
+        "stipend", "vacancies", "deadline", "status", "examDate",
+        "fee", "board", "officialUrl", "sourceUrl",
+    )
+    for item in residencies:
+        old = previous_residencies.get(item["id"])
+        if not old:
+            residency_changes.append({
+                "type": "new",
+                "domain": "residency",
+                "id": item["id"],
+                "item": item,
+            })
+            continue
+        changed = [f for f in residency_fields if old.get(f) != item.get(f)]
+        if changed:
+            residency_changes.append({
+                "type": "updated",
+                "domain": "residency",
+                "id": item["id"],
+                "fields": changed,
+                "item": item,
+            })
+
+    residency_payload = {
+        "updatedAt": now,
+        "count": len(residencies),
+        "officialCount": sum(
+            1 for i in residencies if i["sourceType"] == "official"
+        ),
+        "auxiliaryCount": sum(
+            1 for i in residencies if i["sourceType"] == "aggregator"
+        ),
+        "items": residencies,
+    }
+    all_changes = changes + residency_changes
+
     save_json(runtime / "opportunities.json", payload)
-    save_json(runtime / "changes.json", {"updatedAt": now, "count": len(changes), "changes": changes})
+    save_json(runtime / "residencies.json", residency_payload)
+    save_json(
+        runtime / "changes.json",
+        {"updatedAt": now, "count": len(all_changes), "changes": all_changes},
+    )
     save_json(runtime / "state.json", {
         "updatedAt": now,
-        "lastRun": {"collected": len(collected), "changes": len(changes)},
-        "retentionNote": "Feed público contém apenas itens abertos/futuros detectados nesta execução.",
+        "lastRun": {
+            "contestsCollected": len(collected),
+            "residenciesCollected": len(residencies),
+            "changes": len(all_changes),
+        },
+        "retentionNote": "Feeds públicos contêm itens abertos/futuros detectados na execução.",
     })
-    print(json.dumps({"collected": len(collected), "changes": len(changes)}, ensure_ascii=False))
+    print(json.dumps({
+        "contests": len(collected),
+        "residencies": len(residencies),
+        "changes": len(all_changes),
+    }, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
