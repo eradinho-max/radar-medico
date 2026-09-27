@@ -153,7 +153,7 @@ def collect_govbr() -> list[dict]:
 
 def _pci_article_links(page: str):
     pat = re.compile(
-        r"""<a\\b[^>]*href=["']([^"']*/noticias/[^"']+)["'][^>]*>([\\s\\S]*?)</a>""",
+        r"""<a\b[^>]*href=["']([^"']*/noticias/[^"']+)["'][^>]*>([\s\S]*?)</a>""",
         re.I,
     )
     seen = set()
@@ -170,7 +170,7 @@ def _pci_article_links(page: str):
 
 def _pci_official_url(page: str):
     pat = re.compile(
-        r"""<a\\b[^>]*href=["'](https?://[^"']+)["'][^>]*>([\\s\\S]*?)</a>""",
+        r"""<a\b[^>]*href=["'](https?://[^"']+)["'][^>]*>([\s\S]*?)</a>""",
         re.I,
     )
     fallback = None
@@ -201,10 +201,10 @@ def _pci_official_url(page: str):
 
 
 def _extract_vacancies(text: str):
-    m = re.search(r"(\\d+)\\s*vagas?", text or "", flags=re.I)
+    m = re.search(r"(\d+)\s*vagas?", text or "", flags=re.I)
     if m:
         return m.group(1)
-    if re.search(r"\\bCR\\b|cadastro de reserva", text or "", flags=re.I):
+    if re.search(r"\bCR\b|cadastro de reserva", text or "", flags=re.I):
         return "CR"
     return None
 
@@ -226,7 +226,7 @@ def collect_pci() -> list[dict]:
             continue
 
         detail_text = strip_tags(detail_page)
-        h1 = re.search(r"<h1[^>]*>([\\s\\S]*?)</h1>", detail_page, flags=re.I)
+        h1 = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", detail_page, flags=re.I)
         title = strip_tags(h1.group(1)) if h1 else (label or card_text[:180])
 
         ficha = Ficha(
@@ -266,7 +266,7 @@ def collect_pci() -> list[dict]:
         deadline = extract_deadline(card_text)
         if deadline is None:
             insc_match = re.search(
-                r"inscri[^.]{0,220}?(\\d{2}/\\d{2}/\\d{4})",
+                r"inscri[^.]{0,220}?(\d{2}/\d{2}/\d{4})",
                 detail_text,
                 flags=re.I,
             )
