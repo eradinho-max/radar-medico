@@ -270,7 +270,7 @@ def main():
         "items": collected,
     }
     catalog_residencies, residency_source_health = collect_catalog_sources()
-    residencies = collect_residencies() + catalog_residencies
+    residencies = dedupe(collect_residencies() + catalog_residencies)
     residencies = [
         i for i in residencies
         if i.get("status") in ("open", "upcoming")
