@@ -62,6 +62,12 @@ export default function Home() {
   const [resStatus, setResStatus] = useState("");
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [contestSourceHealth, setContestSourceHealth] = useState<{
+    total: number;
+    healthy: number;
+    errors: number;
+    byRegion: Record<string, number>;
+  }>({ total: 0, healthy: 0, errors: 0, byRegion: {} });
   const [resSourceHealth, setResSourceHealth] = useState<{
     total: number;
     healthy: number;
@@ -74,8 +80,15 @@ export default function Home() {
       fetch("/api/opportunities").then((r) => r.json()),
       fetch("/api/residencies").then((r) => r.json()),
       fetch("/api/residency-sources").then((r) => r.json()),
-    ]).then(([contestData, residencyData, sourceHealth]) => {
+      fetch("/api/contest-sources").then((r) => r.json()),
+    ]).then(([contestData, residencyData, sourceHealth, contestHealth]) => {
       setItems(contestData.items ?? []);
+      setContestSourceHealth({
+        total: contestHealth.total ?? 0,
+        healthy: contestHealth.healthy ?? 0,
+        errors: contestHealth.errors ?? 0,
+        byRegion: contestHealth.byRegion ?? {},
+      });
       setMeta({
         mode: contestData.mode ?? "demo",
         updatedAt: contestData.updatedAt ?? null,
@@ -646,7 +659,7 @@ export default function Home() {
           <div>
             <strong>01</strong>
             <h3>Concursos</h3>
-            <p>Gov.br, HU Brasil/EBSERH e descoberta auxiliar especializada.</p>
+            <p>{contestSourceHealth.total || "—"} fontes oficiais/configuráveis; {contestSourceHealth.healthy || "—"} responderam na última coleta.</p>
           </div>
           <div>
             <strong>02</strong>
@@ -656,7 +669,7 @@ export default function Home() {
           <div>
             <strong>03</strong>
             <h3>Cobertura regional</h3>
-            <p>{Object.entries(resSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "Aguardando primeira coleta do catálogo nacional."}</p>
+            <p>Concursos: {Object.entries(contestSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "aguardando"}<br/>Residências: {Object.entries(resSourceHealth.byRegion).map(([region,count]) => `${region}: ${count}`).join(" · ") || "aguardando"}</p>
           </div>
         </div>
       </section>

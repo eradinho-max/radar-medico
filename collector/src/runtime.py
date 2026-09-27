@@ -14,6 +14,8 @@ from .classificador import detectar_especialidades, eh_medico
 from .modelos import Ficha, normalizar
 from .residencias import collect as collect_residencies
 from .residency_catalog import collect_catalog_sources
+from .contest_catalog import collect_catalog_sources as collect_contest_catalog_sources
+from .change_engine import build_changes
 
 UA = "RadarMedico/0.5 (+https://radar-medico.vercel.app)"
 
@@ -242,22 +244,23 @@ def main():
         if i.get("id")
     }
 
-    collected = dedupe(collect_govbr() + collect_pci())
+    contest_catalog_items, contest_source_health = collect_contest_catalog_sources()
+    collected = dedupe(collect_govbr() + collect_pci() + contest_catalog_items)
     # Radar operacional: mostra abertos/futuros. Fechados ficam fora do feed.
     collected = [i for i in collected if i.get("status") in ("open", "upcoming")]
     collected.sort(key=lambda i: (i.get("deadline") or "9999-12-31", i.get("state") or "ZZ", i.get("title") or ""))
 
     now = datetime.now(timezone.utc).isoformat()
-    changes = []
-    fields = ("title","organization","state","specialty","salary","workload","vacancies","deadline","status","officialUrl","sourceUrl")
-    for item in collected:
-        old = previous.get(item["id"])
-        if not old:
-            changes.append({"type":"new","id":item["id"],"item":item})
-            continue
-        changed = [f for f in fields if old.get(f) != item.get(f)]
-        if changed:
-            changes.append({"type":"updated","id":item["id"],"fields":changed,"item":item})
+    contest_fields = (
+        "title","organization","state","specialty","salary","workload",
+        "vacancies","deadline","status","officialUrl","sourceUrl"
+    )
+    changes = build_changes(
+        collected,
+        previous,
+        domain="contest",
+        fields=contest_fields,
+    )
 
     payload = {
         "updatedAt": now,
@@ -280,31 +283,17 @@ def main():
         )
     )
 
-    residency_changes = []
     residency_fields = (
         "title", "institution", "state", "specialty", "entryType",
         "stipend", "vacancies", "deadline", "status", "examDate",
         "fee", "board", "officialUrl", "editalPdf", "sourceUrl",
     )
-    for item in residencies:
-        old = previous_residencies.get(item["id"])
-        if not old:
-            residency_changes.append({
-                "type": "new",
-                "domain": "residency",
-                "id": item["id"],
-                "item": item,
-            })
-            continue
-        changed = [f for f in residency_fields if old.get(f) != item.get(f)]
-        if changed:
-            residency_changes.append({
-                "type": "updated",
-                "domain": "residency",
-                "id": item["id"],
-                "fields": changed,
-                "item": item,
-            })
+    residency_changes = build_changes(
+        residencies,
+        previous_residencies,
+        domain="residency",
+        fields=residency_fields,
+    )
 
     residency_payload = {
         "updatedAt": now,
@@ -320,6 +309,7 @@ def main():
     all_changes = changes + residency_changes
 
     save_json(runtime / "opportunities.json", payload)
+    save_json(runtime / "contest-source-health.json", {"updatedAt": now, "sources": contest_source_health})
     save_json(runtime / "residencies.json", residency_payload)
     save_json(runtime / "residency-source-health.json", {"updatedAt": now, "sources": residency_source_health})
     save_json(
@@ -331,6 +321,8 @@ def main():
         "lastRun": {
             "contestsCollected": len(collected),
             "residenciesCollected": len(residencies),
+            "contestSourcesChecked": len(contest_source_health),
+            "contestSourcesHealthy": sum(1 for s in contest_source_health if s.get("status") == "ok"),
             "residencySourcesChecked": len(residency_source_health),
             "residencySourcesHealthy": sum(1 for s in residency_source_health if s.get("status") == "ok"),
             "changes": len(all_changes),
@@ -340,6 +332,7 @@ def main():
     print(json.dumps({
         "contests": len(collected),
         "residencies": len(residencies),
+        "contestSources": len(contest_source_health),
         "changes": len(all_changes),
     }, ensure_ascii=False))
 
