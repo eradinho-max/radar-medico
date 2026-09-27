@@ -282,7 +282,7 @@ def main():
     residency_fields = (
         "title", "institution", "state", "specialty", "entryType",
         "stipend", "vacancies", "deadline", "status", "examDate",
-        "fee", "board", "officialUrl", "sourceUrl",
+        "fee", "board", "officialUrl", "editalPdf", "sourceUrl",
     )
     for item in residencies:
         old = previous_residencies.get(item["id"])
