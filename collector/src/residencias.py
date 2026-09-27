@@ -12,6 +12,36 @@ UA = "RadarMedico/0.6 (+https://radar-medico.vercel.app)"
 PASSAPRO = "https://www.passapro.com.br/blog/editais"
 ENARE_SERVICE = "https://www.gov.br/pt-br/servicos/inscrever-se-no-exame-nacional-de-residencia-enare-candidato"
 
+OFFICIAL_OPEN_PAGES = [
+    {
+        "name": "SES/SC — Escola de Saúde Pública",
+        "url": "https://esp.saude.sc.gov.br/index.php/todos-os-cursos/771-processo-seletivo-programas-de-residencia-medica",
+        "state": "SC",
+        "city": "Santa Catarina",
+        "specialty": "Múltiplas especialidades",
+        "entryType": "Acesso direto / Pré-requisito",
+        "knownDeadline": "2026-10-19",
+    },
+    {
+        "name": "Prefeitura de Joinville — Residência Médica",
+        "url": "https://www.joinville.sc.gov.br/publicacoes/processo-seletivo-edital-no-30568243-2026-para-residencia-medica-em-medicina-de-familia-e-comunidade/",
+        "state": "SC",
+        "city": "Joinville",
+        "specialty": "Medicina de Família e Comunidade",
+        "entryType": "Acesso direto",
+        "knownDeadline": "2026-10-19",
+    },
+    {
+        "name": "SESAU/RO — COREME",
+        "url": "https://rondonia.ro.gov.br/publicacao/edital-no-14-2026-cohrec-coreme/",
+        "state": "RO",
+        "city": "Rondônia",
+        "specialty": "Múltiplas especialidades",
+        "entryType": "Não informado",
+        "knownDeadline": None,
+    },
+]
+
 EXCLUDE = (
     "multiprofissional", "uniprofissional", "enfermagem", "fisioterapia",
     "odontologia", "psicologia", "farmacia", "farmácia",
@@ -133,6 +163,84 @@ def detail_fields(url: str):
         "board": (re.search(r"(?:banca)[^A-Za-zÀ-ÿ]{0,5}([A-Za-zÀ-ÿ0-9 /.-]{2,60})", text, flags=re.I).group(1).strip() if re.search(r"(?:banca)[^A-Za-zÀ-ÿ]{0,5}([A-Za-zÀ-ÿ0-9 /.-]{2,60})", text, flags=re.I) else None),
     }
 
+
+def _extract_first_official_document(page: str, base_url: str):
+    for href, label in re.findall(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([\s\S]*?)</a>', page, flags=re.I):
+        lbl = clean(label)
+        absolute = urljoin(base_url, html.unescape(href))
+        if re.search(r"edital|documento|download|pdf", lbl + " " + absolute, flags=re.I):
+            return absolute
+    return None
+
+def _parse_exam_date(text: str):
+    m = re.search(r"(?:data da prova|prova(?: objetiva)?)[^0-9]{0,40}(\d{2}/\d{2}/\d{4})", text, flags=re.I)
+    return m.group(1) if m else None
+
+def _parse_fee(text: str):
+    m = re.search(r"(?:taxa|inscri[^.]{0,50})[^R$]{0,15}R\$\s*([0-9.]+(?:,[0-9]{1,2})?)", text, flags=re.I)
+    if not m:
+        return None
+    try:
+        return float(m.group(1).replace(".", "").replace(",", "."))
+    except ValueError:
+        return None
+
+def collect_official_pages() -> list[dict]:
+    out = []
+    for source in OFFICIAL_OPEN_PAGES:
+        try:
+            page = fetch(source["url"])
+        except Exception as exc:
+            print(f"[WARN] residencia oficial {source['name']}: {exc}")
+            continue
+
+        text = clean(page)
+        n = normalize(text)
+        if "residencia medica" not in n and "medico residente" not in n:
+            continue
+        if "encerrad" in n and not source.get("knownDeadline"):
+            continue
+
+        deadline = source.get("knownDeadline") or parse_deadline(text)
+        status = "open"
+        if deadline:
+            try:
+                status = "open" if date.fromisoformat(deadline) >= date.today() else "closed"
+            except ValueError:
+                pass
+        if status == "closed":
+            continue
+
+        title_match = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", page, flags=re.I)
+        title = clean(title_match.group(1)) if title_match else source["name"]
+        edital_pdf = _extract_first_official_document(page, source["url"])
+        key = fp("official-residency", source["url"], title)
+
+        out.append({
+            "id": key[:24],
+            "title": title[:240],
+            "institution": source["name"],
+            "city": source["city"],
+            "state": source["state"],
+            "specialty": source["specialty"],
+            "entryType": source["entryType"],
+            "stipend": None,
+            "vacancies": parse_vacancies(text),
+            "deadline": deadline,
+            "status": status,
+            "examDate": _parse_exam_date(text),
+            "fee": _parse_fee(text),
+            "board": None,
+            "officialUrl": source["url"],
+            "editalPdf": edital_pdf,
+            "sourceUrl": source["url"],
+            "sourceName": source["name"],
+            "sourceType": "official",
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+            "fingerprint": key,
+        })
+    return out
+
 def collect_passapro(limit_details: int = 30) -> list[dict]:
     try:
         page = fetch(PASSAPRO)
@@ -199,6 +307,7 @@ def collect_passapro(limit_details: int = 30) -> list[dict]:
             "fee": detail.get("fee"),
             "board": detail.get("board"),
             "officialUrl": detail.get("officialUrl"),
+            "editalPdf": detail.get("officialUrl") if (detail.get("officialUrl") or "").lower().endswith(".pdf") else None,
             "sourceUrl": source_url,
             "sourceName": "PassaPro — descoberta auxiliar",
             "sourceType": "official" if detail.get("officialUrl") else "aggregator",
@@ -235,6 +344,13 @@ def collect_enare_reference() -> list[dict]:
     }]
 
 def collect() -> list[dict]:
-    items = collect_passapro()
-    # A referência oficial fica separada do feed aberto para não parecer inscrição ativa.
-    return items
+    official = collect_official_pages()
+    auxiliary = collect_passapro()
+
+    seen = {item["officialUrl"] for item in official if item.get("officialUrl")}
+    merged = list(official)
+    for item in auxiliary:
+        if item.get("officialUrl") and item["officialUrl"] in seen:
+            continue
+        merged.append(item)
+    return merged
