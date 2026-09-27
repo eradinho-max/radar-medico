@@ -10,7 +10,7 @@ UA = "RadarMedico/1.0 (+https://radar-medico.vercel.app)"
 
 def fetch_html(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html,application/xhtml+xml"})
-    with urllib.request.urlopen(req, timeout=15) as response:
+    with urllib.request.urlopen(req, timeout=8) as response:
         charset = response.headers.get_content_charset() or "utf-8"
         return response.read().decode(charset, errors="replace")
 
