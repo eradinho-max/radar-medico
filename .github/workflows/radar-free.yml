@@ -1,0 +1,48 @@
+name: Radar Médico — FREE ONLY
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 10,16,22 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run regression tests
+        run: python -m unittest discover -s collector/tests -v
+
+      - name: Ensure data release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view radar-data >/dev/null 2>&1; then
+            gh release create radar-data               --title "Radar Médico — dados operacionais"               --notes "Assets operacionais atualizados automaticamente. Não editar manualmente."               --target "${GITHUB_SHA}"
+          fi
+
+      - name: Bootstrap free data assets when absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p runtime
+          if ! gh release download radar-data --pattern "opportunities.json" --dir runtime >/dev/null 2>&1; then
+            printf '{"updatedAt":null,"items":[]}
+' > runtime/opportunities.json
+            gh release upload radar-data runtime/opportunities.json --clobber
+          fi
+
+      - name: Free-only guard
+        run: |
+          echo "FREE_ONLY=1"
+          echo "Nenhuma etapa deste workflow utiliza serviço pago."
