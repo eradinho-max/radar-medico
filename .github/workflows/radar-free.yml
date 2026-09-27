@@ -68,6 +68,10 @@ jobs:
           RADAR_EMAIL_TO: ${{ secrets.RADAR_EMAIL_TO }}
           GMAIL_SMTP_USER: ${{ secrets.GMAIL_SMTP_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RADAR_ALERT_DOMAINS: ${{ vars.RADAR_ALERT_DOMAINS }}
+          RADAR_ALERT_STATES: ${{ vars.RADAR_ALERT_STATES }}
+          RADAR_ALERT_SPECIALTIES: ${{ vars.RADAR_ALERT_SPECIALTIES }}
+          RADAR_ALERT_MIN_VALUE: ${{ vars.RADAR_ALERT_MIN_VALUE }}
         run: python -m collector.src.notify
 
       - name: Publish operational assets
@@ -75,6 +79,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload radar-data runtime/opportunities.json --clobber
+          gh release upload radar-data runtime/contest-source-health.json --clobber
           gh release upload radar-data runtime/residencies.json --clobber
           gh release upload radar-data runtime/residency-source-health.json --clobber
           gh release upload radar-data runtime/changes.json --clobber
