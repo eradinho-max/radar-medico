@@ -5,6 +5,38 @@ import { DEFAULT_MY_RADAR, type MyRadarProfile } from "@/lib/my-radar";
 
 const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
+const BASE_SPECIALTIES = [
+  "Anestesiologia",
+  "Cardiologia",
+  "Cirurgia Geral",
+  "Clínica Médica",
+  "Dermatologia",
+  "Endocrinologia",
+  "Gastroenterologia",
+  "Geriatria",
+  "Ginecologia e Obstetrícia",
+  "Hematologia",
+  "Infectologia",
+  "Medicina de Emergência",
+  "Medicina de Família e Comunidade",
+  "Medicina do Trabalho",
+  "Medicina Intensiva",
+  "Medicina Legal / Perícia Médica",
+  "Nefrologia",
+  "Neonatologia",
+  "Neurologia",
+  "Oftalmologia",
+  "Oncologia",
+  "Ortopedia e Traumatologia",
+  "Otorrinolaringologia",
+  "Pediatria",
+  "Pneumologia",
+  "Psiquiatria",
+  "Radiologia",
+  "Reumatologia",
+  "Urologia",
+];
+
 type Props = {
   specialties: string[];
   profile: MyRadarProfile;
@@ -29,7 +61,7 @@ export default function MyRadarPanel({
   useEffect(() => setDraft(profile), [profile]);
 
   const sortedSpecialties = useMemo(
-    () => Array.from(new Set(specialties.filter(Boolean))).sort(),
+    () => Array.from(new Set([...BASE_SPECIALTIES, ...specialties.filter(Boolean)])).sort(),
     [specialties],
   );
 
@@ -92,6 +124,21 @@ export default function MyRadarPanel({
             {sortedSpecialties.map((sp) => (
               <button key={sp} type="button" className={draft.specialties.includes(sp) ? "prefChip active" : "prefChip"} onClick={() => toggleList("specialties", sp)}>{sp}</button>
             ))}
+          </div>
+        </div>
+
+        <div className="myRadarBlock">
+          <h3>Quando avisar</h3>
+          <div className="checkGrid compact">
+            <label><input type="checkbox" checked={draft.notify_new} onChange={(e) => setDraft({ ...draft, notify_new: e.target.checked })}/> Nova oportunidade</label>
+            <label><input type="checkbox" checked={draft.notify_updates} onChange={(e) => setDraft({ ...draft, notify_updates: e.target.checked })}/> Atualização de prazo/dados</label>
+            <label><input type="checkbox" checked={draft.notify_revisions} onChange={(e) => setDraft({ ...draft, notify_revisions: e.target.checked })}/> Retificação</label>
+            <label className="digestSelect">Frequência
+              <select value={draft.digest} onChange={(e) => setDraft({ ...draft, digest: e.target.value as "immediate" | "daily" })}>
+                <option value="immediate">Avisar nas verificações do dia</option>
+                <option value="daily">Resumo diário</option>
+              </select>
+            </label>
           </div>
         </div>
 
