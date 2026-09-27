@@ -67,6 +67,7 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
 
         matches = 0
         seen = set()
+        detail_fetches = 0
         for href, label in _anchors(page):
             absolute = urljoin(source["url"], href)
             if absolute in seen:
@@ -77,20 +78,41 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
 
             if not any(normalizar(term) in n for term in ACTIVE_TERMS):
                 continue
-            if any(x in n for x in EXCLUDE):
-                continue
-            if not any(normalizar(term) in n for term in MEDICAL_HINTS):
-                continue
 
             years = [int(y) for y in re.findall(r"\b(20\d{2})\b", text)]
             if years and max(years) < current_year - 1:
                 continue
 
-            ficha = Ficha(id="x", titulo=label, orgao=source["name"], cargo=label)
+            evidence = text
+            evidence_n = n
+            has_medical_hint = any(normalizar(term) in evidence_n for term in MEDICAL_HINTS)
+
+            if not has_medical_hint and detail_fetches < 3:
+                try:
+                    detail_page = fetch_html(absolute)
+                    detail_fetches += 1
+                    detail_text = clean_html(detail_page)
+                    evidence = f"{label} {detail_text[:30000]}"
+                    evidence_n = normalizar(evidence)
+                    has_medical_hint = any(
+                        normalizar(term) in evidence_n for term in MEDICAL_HINTS
+                    )
+                except Exception:
+                    pass
+
+            if not has_medical_hint:
+                continue
+            if any(x in evidence_n for x in EXCLUDE) and not any(
+                term in evidence_n
+                for term in ("medico", "psiquiatr", "geriatr", "pediatr", "clinico", "generalista")
+            ):
+                continue
+
+            ficha = Ficha(id="x", titulo=label, orgao=source["name"], cargo=evidence[:5000])
             if not eh_medico(ficha):
                 continue
 
-            deadline = parse_deadline(label)
+            deadline = parse_deadline(evidence)
             status = "open"
             if deadline:
                 try:
@@ -100,7 +122,7 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
             if status == "closed":
                 continue
 
-            specs = detectar_especialidades(label)
+            specs = detectar_especialidades(evidence)
             specialty = specs[0].replace("/", " / ").title() if specs else "Medicina"
             key = fingerprint("contest-catalog", source["id"], absolute, label)
 
@@ -111,12 +133,12 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
                 "city": source.get("city") or "",
                 "state": source["state"],
                 "specialty": specialty,
-                "salary": parse_money(label),
-                "workload": _workload(label),
-                "vacancies": _vacancies(label),
+                "salary": parse_money(evidence),
+                "workload": _workload(evidence),
+                "vacancies": _vacancies(evidence),
                 "deadline": deadline,
                 "status": status,
-                "modality": _modality(label),
+                "modality": _modality(evidence),
                 "officialUrl": absolute,
                 "sourceUrl": source["url"],
                 "sourceName": source["name"],
