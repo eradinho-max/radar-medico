@@ -10,7 +10,7 @@ from .residencias import clean, fetch, fp, normalize, parse_deadline, parse_mone
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "residency_sources.json"
 ACTIVE_TERMS = ("edital", "processo seletivo", "seleção", "selecao", "inscrições", "inscricoes", "vagas", "remanescente", "residência médica", "residencia medica")
-EXCLUDE_TERMS = ("multiprofissional", "uniprofissional", "odontologia", "enfermagem", "fisioterapia", "psicologia", "farmácia", "farmacia")
+EXCLUDE_TERMS = ("multiprofissional", "uniprofissional", "odontologia", "enfermagem", "fisioterapia", "psicologia", "farmácia", "farmacia")\nACCESSORY_TERMS = ("resultado", "gabarito", "convocacao", "convocação", "recurso", "homologacao", "homologação", "classificacao", "classificação", "segunda chamada", "chamada final")\nGENERIC_LABELS = ("abrir", "download", "clique aqui", "ver arquivo", "arquivo")
 
 def load_sources() -> list[dict]:
     data = json.loads(CONFIG.read_text(encoding="utf-8"))
@@ -50,6 +50,14 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
             seen.add(absolute)
             text = f"{label} {absolute}"
             n = normalize(text)
+
+            if any(normalize(x) in n for x in ACCESSORY_TERMS):
+                continue
+            if normalize(label) in {normalize(x) for x in GENERIC_LABELS}:
+                url_name = absolute.rsplit("/", 1)[-1].split("?")[0].replace("-", " ").replace("_", " ")
+                if not any(term in normalize(url_name) for term in ("edital", "residencia medica", "processo seletivo", "inscricoes", "vagas remanescentes")):
+                    continue
+                label = url_name
 
             if "residencia" not in n or "medic" not in n:
                 continue
