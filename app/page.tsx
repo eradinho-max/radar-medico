@@ -508,7 +508,7 @@ export default function Home() {
 
             <div className="cards">
               {filteredResidencies.map((item) => {
-                const sourceLink = item.officialUrl || item.sourceUrl;
+                const sourceLink = item.editalPdf || item.officialUrl || item.sourceUrl;
                 return (
                   <article className="jobCard residencyCard" key={item.id}>
                     <div className="cardTop">
@@ -565,7 +565,7 @@ export default function Home() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {item.officialUrl ? "Abrir edital/fonte oficial" : "Abrir descoberta"}
+                          {item.editalPdf ? "Abrir edital" : item.officialUrl ? "Abrir fonte oficial" : "Abrir descoberta"}
                         </a>
                       ) : (
                         <span className="button secondary">Sem link externo</span>
