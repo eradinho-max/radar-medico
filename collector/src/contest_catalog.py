@@ -87,7 +87,7 @@ def collect_catalog_sources() -> tuple[list[dict], list[dict]]:
             evidence_n = n
             has_medical_hint = any(normalizar(term) in evidence_n for term in MEDICAL_HINTS)
 
-            if not has_medical_hint and detail_fetches < 3:
+            if not has_medical_hint and detail_fetches < 1:
                 try:
                     detail_page = fetch_html(absolute)
                     detail_fetches += 1
