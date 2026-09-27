@@ -35,3 +35,13 @@
 .matchSummary strong{display:block;font-size:24px}
 .matchSummary span{color:#7f98b1;font-size:11px}
 @media(max-width:680px){.checkGrid.compact,.twoCols,.matchSummary{grid-template-columns:1fr}.matchToggle{margin-left:0;width:100%}.myRadarPanel{padding:15px}}
+
+.digestSelect{display:grid!important;gap:6px!important}
+.digestSelect select,.dailySyncControls input{width:100%;background:#091827;border:1px solid #1c3550;border-radius:11px;color:#edf6ff;padding:10px 12px;outline:none;font:inherit}
+.dailySync{background:linear-gradient(135deg,#0d2637,#0d202f);border:1px solid #20506b;border-radius:17px;padding:17px;display:grid;gap:12px}
+.dailySync h3{margin:0 0 5px;font-size:15px}
+.dailySync p{margin:0;color:#819bb3;font-size:12px;line-height:1.5}
+.dailySyncControls{display:grid;grid-template-columns:minmax(180px,.7fr) 1.3fr;gap:9px}
+.syncStatus{display:block;color:#7890a8;line-height:1.4}
+.syncStatus.ok{color:#72dfbd}.syncStatus.error{color:#ff9c9c}.syncStatus.unconfigured{color:#ffd07a}
+@media(max-width:680px){.dailySyncControls{grid-template-columns:1fr}}
