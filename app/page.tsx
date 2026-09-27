@@ -428,8 +428,8 @@ export default function Home() {
                       <span>{sourceLabel}:</span> {item.sourceName}
                       {item.sourceType === "aggregator"
                         ? item.officialUrl
-                          ? " — link oficial específico localizado."
-                          : " — link oficial específico ainda não localizado; a descoberta abre no anúncio correspondente."
+                          ? " — destino oficial específico validado."
+                          : " — edital oficial direto ainda não validado; o botão abre exatamente o anúncio deste concurso no PCI."
                         : ""}
                     </div>
 
@@ -442,8 +442,8 @@ export default function Home() {
                           rel="noreferrer"
                         >
                           {item.officialUrl
-                            ? "Abrir edital / processo oficial"
-                            : "Ver descoberta específica no PCI"}
+                            ? "Abrir processo oficial validado"
+                            : "Abrir anúncio específico no PCI"}
                         </a>
                       ) : (
                         <span className="button secondary">Sem link externo</span>
