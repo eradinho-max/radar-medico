@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "enare",
+      "name": "HU Brasil — ENARE",
+      "state": "BR",
+      "city": "Brasil",
+      "url": "https://www.gov.br/hubrasil/pt-br/ensino-e-pesquisa/exame-nacional-de-residencia-enare",
+      "region": "Nacional"
+    },
+    {
+      "id": "uncisal",
+      "name": "UNCISAL — Seleções",
+      "state": "AL",
+      "city": "Maceió",
+      "url": "https://selecao.uncisal.edu.br/",
+      "region": "Nordeste"
+    },
+    {
+      "id": "joao-pessoa",
+      "name": "Prefeitura de João Pessoa — Residências",
+      "state": "PB",
+      "city": "João Pessoa",
+      "url": "https://www.joaopessoa.pb.gov.br/noticias/prefeitura-abre-chamada-publica-para-vagas-remanescentes-dos-programas-de-residencias-em-saude/",
+      "region": "Nordeste"
+    },
+    {
+      "id": "hupes-ufba",
+      "name": "HUPES-UFBA — COREME",
+      "state": "BA",
+      "city": "Salvador",
+      "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-nordeste/hupes-ufba/ensino-e-pesquisa/ensino/residencia-medica/sobre",
+      "region": "Nordeste"
+    },
+    {
+      "id": "hc-ufg",
+      "name": "HC-UFG — Residência Médica",
+      "state": "GO",
+      "city": "Goiânia",
+      "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-centro-oeste/hc-ufg/ensino-e-pesquisa/residencias/residencia-medica",
+      "region": "Centro-Oeste"
+    },
+    {
+      "id": "hub-unb",
+      "name": "HUB-UnB — Residência Médica",
+      "state": "DF",
+      "city": "Brasília",
+      "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-centro-oeste/hub-unb/ensino-e-pesquisa/ensino/pos-graduacao/cursos-1",
+      "region": "Centro-Oeste"
+    },
+    {
+      "id": "fhemig",
+      "name": "FHEMIG — Residências",
+      "state": "MG",
+      "city": "Minas Gerais",
+      "url": "https://www.fhemig.mg.gov.br/ensino-e-pesquisa/processo-seletivo-residencias-fhemig",
+      "region": "Sudeste"
+    },
+    {
+      "id": "ses-rj",
+      "name": "SES-RJ — Pós-Graduação e Residências",
+      "state": "RJ",
+      "city": "Rio de Janeiro",
+      "url": "https://www.rj.gov.br/saude/divisao-de-pos-graduacao",
+      "region": "Sudeste"
+    },
+    {
+      "id": "sms-sp",
+      "name": "SMS São Paulo — Seleções Públicas",
+      "state": "SP",
+      "city": "São Paulo",
+      "url": "https://prefeitura.sp.gov.br/web/saude/w/ems/359048",
+      "region": "Sudeste"
+    },
+    {
+      "id": "chu-ufpa",
+      "name": "CHU-UFPA — PSS Residência Médica",
+      "state": "PA",
+      "city": "Belém",
+      "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios/regiao-norte/chu-ufpa/ensino-e-pesquisa/processo-seletivo/pss-medica-2026",
+      "region": "Norte"
+    },
+    {
+      "id": "hu-brasil-hospitais",
+      "name": "HU Brasil — Hospitais Universitários",
+      "state": "BR",
+      "city": "Brasil",
+      "url": "https://www.gov.br/hubrasil/pt-br/hospitais-universitarios",
+      "region": "Nacional"
+    }
+  ]
+}
