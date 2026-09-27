@@ -151,63 +151,133 @@ def collect_govbr() -> list[dict]:
             })
     return out
 
-def _pci_cards(page: str):
-    # PCI usa imagens com alt descritivo dentro dos links dos resultados.
+def _pci_article_links(page: str):
     pat = re.compile(
-        r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>\s*<img\b[^>]*alt=["\']([^"\']+)["\'][^>]*>',
+        r'<a\\b[^>]*href=["\\']([^"\\']*/noticias/[^"\\']+)["\\'][^>]*>([\\s\\S]*?)</a>',
         re.I,
     )
-    for href, alt in pat.findall(page):
-        yield html.unescape(href), html.unescape(alt)
+    seen = set()
+    for match in pat.finditer(page):
+        href, inner = match.group(1), match.group(2)
+        absolute = urljoin("https://www.pciconcursos.com.br", html.unescape(href))
+        if absolute in seen:
+            continue
+        seen.add(absolute)
+        label = strip_tags(inner)
+        snippet = strip_tags(page[match.start(): min(len(page), match.start() + 1800)])
+        yield absolute, label, snippet
+
+
+def _pci_official_url(page: str):
+    pat = re.compile(
+        r'<a\\b[^>]*href=["\\'](https?://[^"\\']+)["\\'][^>]*>([\\s\\S]*?)</a>',
+        re.I,
+    )
+    fallback = None
+    for href, inner in pat.findall(page):
+        url = html.unescape(href)
+        low = url.lower()
+        if any(x in low for x in ("pciconcursos.com.br", "pci.app.br", "google.", "youtube.", "facebook.", "instagram.")):
+            continue
+        label = normalizar(strip_tags(inner))
+        if any(x in label or x in low for x in ("edital", "concurso", "inscricao", "inscrições", "processo seletivo")):
+            return url
+        if fallback is None:
+            fallback = url
+    return fallback
+
+
+def _extract_vacancies(text: str):
+    m = re.search(r"(\\d+)\\s*vagas?", text or "", flags=re.I)
+    if m:
+        return m.group(1)
+    if re.search(r"\\bCR\\b|cadastro de reserva", text or "", flags=re.I):
+        return "CR"
+    return None
+
 
 def collect_pci() -> list[dict]:
+    base = "https://www.pciconcursos.com.br/pesquisa/medico"
+    try:
+        page = fetch(base)
+    except Exception as exc:
+        print(f"[WARN] pci:medico: {exc}")
+        return []
+
     out = []
-    seen = set()
-    for query, specialty in PCI_QUERIES:
-        base = f"https://www.pciconcursos.com.br/pesquisa/{query}"
+    for absolute, label, card_text in list(_pci_article_links(page))[:15]:
         try:
-            page = fetch(base)
+            detail_page = fetch(absolute)
         except Exception as exc:
-            print(f"[WARN] pci:{query}: {exc}")
+            print(f"[WARN] pci-detail:{absolute}: {exc}")
             continue
-        for href, title in _pci_cards(page):
-            absolute = urljoin(base, href)
-            key = fingerprint("pci", absolute)
-            if key in seen:
-                continue
-            seen.add(key)
 
-            n = normalizar(title)
-            if any(x in n for x in ("veterin", "biomedic", "odontolog", "dentista")):
-                continue
-            if not any(x in n for x in ("medic", "psiquiatr", "geriatr", "pediatr", "cardiolog", "ginecolog",
-                                        "anestesiolog", "neurolog", "ortoped", "radiolog", "urolog", "dermatolog",
-                                        "infectolog")):
-                # A busca específica serve como descoberta, mas não publicamos título totalmente genérico.
-                continue
+        detail_text = strip_tags(detail_page)
+        h1 = re.search(r"<h1[^>]*>([\\s\\S]*?)</h1>", detail_page, flags=re.I)
+        title = strip_tags(h1.group(1)) if h1 else (label or card_text[:180])
 
-            deadline = extract_deadline(title)
-            fp = fingerprint("pci", title, absolute)
-            out.append({
-                "id": fp[:24],
-                "title": title[:240],
-                "organization": title.split(" - ")[0][:140],
-                "city": "",
-                "state": extract_uf(title),
-                "specialty": specialty,
-                "salary": extract_salary(title),
-                "workload": None,
-                "vacancies": None,
-                "deadline": deadline,
-                "status": status_for(deadline, title),
-                "modality": modality_for(title),
-                "officialUrl": None,
-                "sourceUrl": absolute,
-                "sourceName": "PCI Concursos — descoberta auxiliar",
-                "sourceType": "aggregator",
-                "updatedAt": datetime.now(timezone.utc).isoformat(),
-                "fingerprint": fp,
-            })
+        ficha = Ficha(
+            id="x",
+            titulo=title,
+            orgao=label,
+            cargo=detail_text[:20000],
+        )
+        if not eh_medico(ficha):
+            continue
+
+        medical_terms = normalizar(detail_text)
+        if any(x in medical_terms for x in ("medico veterinario", "biomedico")) and not any(
+            x in medical_terms
+            for x in ("medico clinico", "medico esf", "medico plantonista", "psiquiatr", "geriatr", "pediatr", "cardiolog", "ginecolog", "anestesiolog", "neurolog", "ortoped", "urolog", "dermatolog", "infectolog")
+        ):
+            continue
+
+        deadline = extract_deadline(card_text)
+        if deadline is None:
+            insc_match = re.search(
+                r"inscri[^.]{0,220}?(\\d{2}/\\d{2}/\\d{4})",
+                detail_text,
+                flags=re.I,
+            )
+            deadline = extract_deadline(insc_match.group(0)) if insc_match else None
+
+        status = status_for(deadline, detail_text)
+        if status == "closed":
+            continue
+
+        specs = detectar_especialidades(detail_text)
+        if len(specs) == 1:
+            specialty = specs[0].replace("/", " / ").title()
+        elif len(specs) > 1:
+            specialty = "Múltiplas especialidades"
+        else:
+            specialty = "Medicina"
+
+        organization = label.strip() if label.strip() else title.split(" - ")[0][:140]
+        official_url = _pci_official_url(detail_page)
+        fp = fingerprint("pci", absolute)
+
+        out.append({
+            "id": fp[:24],
+            "title": title[:240],
+            "organization": organization[:140],
+            "city": "",
+            "state": extract_uf(title + " " + card_text),
+            "specialty": specialty,
+            "salary": extract_salary(card_text) or extract_salary(detail_text[:12000]),
+            "workload": None,
+            "vacancies": _extract_vacancies(card_text),
+            "deadline": deadline,
+            "status": status,
+            "modality": modality_for(detail_text),
+            "officialUrl": official_url,
+            "sourceUrl": absolute,
+            "sourceName": "PCI Concursos — descoberta auxiliar",
+            "sourceType": "aggregator",
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+            "fingerprint": fp,
+        })
+
     return out
 
 def dedupe(items: list[dict]) -> list[dict]:
