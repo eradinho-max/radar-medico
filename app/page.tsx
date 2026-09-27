@@ -427,7 +427,9 @@ export default function Home() {
                     <div className="sourceLine">
                       <span>{sourceLabel}:</span> {item.sourceName}
                       {item.sourceType === "aggregator"
-                        ? " — confirme no edital oficial."
+                        ? item.officialUrl
+                          ? " — link oficial específico localizado."
+                          : " — link oficial específico ainda não localizado; a descoberta abre no anúncio correspondente."
                         : ""}
                     </div>
 
@@ -440,8 +442,8 @@ export default function Home() {
                           rel="noreferrer"
                         >
                           {item.officialUrl
-                            ? "Abrir fonte oficial"
-                            : "Abrir descoberta"}
+                            ? "Abrir edital / processo oficial"
+                            : "Ver descoberta específica no PCI"}
                         </a>
                       ) : (
                         <span className="button secondary">Sem link externo</span>
