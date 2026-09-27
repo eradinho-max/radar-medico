@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "ms-concursos",
+      "name": "Ministério da Saúde — Concursos e Seleções",
+      "kind": "official",
+      "scope": "federal",
+      "state": "BR",
+      "region": "Nacional",
+      "url": "https://www.gov.br/saude/pt-br/acesso-a-informacao/concursos-e-selecoes"
+    },
+    {
+      "id": "ms-concursos-publicos",
+      "name": "Ministério da Saúde — Concursos Públicos",
+      "kind": "official",
+      "scope": "federal",
+      "state": "BR",
+      "region": "Nacional",
+      "url": "https://www.gov.br/saude/pt-br/acesso-a-informacao/concursos-e-selecoes/concursos"
+    },
+    {
+      "id": "ms-pss-2026",
+      "name": "Ministério da Saúde — Processo Seletivo Simplificado 2026",
+      "kind": "official",
+      "scope": "federal",
+      "state": "DF",
+      "region": "Centro-Oeste",
+      "url": "https://www.gov.br/saude/pt-br/acesso-a-informacao/concursos-e-selecoes/processo-seletivo-simplificado/2026"
+    },
+    {
+      "id": "hubrasil-selecoes",
+      "name": "HU Brasil / EBSERH — Concursos e Seleções",
+      "kind": "official",
+      "scope": "national-network",
+      "state": "BR",
+      "region": "Nacional",
+      "url": "https://www.gov.br/hubrasil/pt-br/acesso-a-informacao/agentes-publicos/concursos-e-selecoes"
+    },
+    {
+      "id": "sesau-al",
+      "name": "Secretaria de Estado da Saúde de Alagoas",
+      "kind": "official",
+      "scope": "state",
+      "state": "AL",
+      "region": "Nordeste",
+      "url": "https://www.saude.al.gov.br/"
+    },
+    {
+      "id": "ses-pe",
+      "name": "Secretaria Estadual de Saúde de Pernambuco",
+      "kind": "official",
+      "scope": "state",
+      "state": "PE",
+      "region": "Nordeste",
+      "url": "https://portal.saude.pe.gov.br/"
+    },
+    {
+      "id": "sesab-ba",
+      "name": "Secretaria da Saúde do Estado da Bahia",
+      "kind": "official",
+      "scope": "state",
+      "state": "BA",
+      "region": "Nordeste",
+      "url": "https://www.saude.ba.gov.br/"
+    },
+    {
+      "id": "sesap-rn",
+      "name": "Secretaria da Saúde Pública do Rio Grande do Norte",
+      "kind": "official",
+      "scope": "state",
+      "state": "RN",
+      "region": "Nordeste",
+      "url": "https://www.saude.rn.gov.br/"
+    },
+    {
+      "id": "ses-pb",
+      "name": "Secretaria de Estado da Saúde da Paraíba",
+      "kind": "official",
+      "scope": "state",
+      "state": "PB",
+      "region": "Nordeste",
+      "url": "https://paraiba.pb.gov.br/diretas/saude"
+    },
+    {
+      "id": "sesa-ce",
+      "name": "Secretaria da Saúde do Ceará",
+      "kind": "official",
+      "scope": "state",
+      "state": "CE",
+      "region": "Nordeste",
+      "url": "https://www.saude.ce.gov.br/"
+    },
+    {
+      "id": "ses-go",
+      "name": "Secretaria de Estado da Saúde de Goiás",
+      "kind": "official",
+      "scope": "state",
+      "state": "GO",
+      "region": "Centro-Oeste",
+      "url": "https://www.saude.go.gov.br/"
+    },
+    {
+      "id": "ses-df",
+      "name": "Secretaria de Saúde do Distrito Federal",
+      "kind": "official",
+      "scope": "state",
+      "state": "DF",
+      "region": "Centro-Oeste",
+      "url": "https://www.saude.df.gov.br/"
+    },
+    {
+      "id": "ses-mg",
+      "name": "Secretaria de Estado de Saúde de Minas Gerais",
+      "kind": "official",
+      "scope": "state",
+      "state": "MG",
+      "region": "Sudeste",
+      "url": "https://www.saude.mg.gov.br/"
+    },
+    {
+      "id": "ses-rj",
+      "name": "Secretaria de Estado de Saúde do Rio de Janeiro",
+      "kind": "official",
+      "scope": "state",
+      "state": "RJ",
+      "region": "Sudeste",
+      "url": "https://www.rj.gov.br/saude/"
+    },
+    {
+      "id": "sms-sp",
+      "name": "Secretaria Municipal da Saúde de São Paulo",
+      "kind": "official",
+      "scope": "municipal",
+      "state": "SP",
+      "region": "Sudeste",
+      "url": "https://prefeitura.sp.gov.br/web/saude"
+    },
+    {
+      "id": "ses-sc",
+      "name": "Secretaria de Estado da Saúde de Santa Catarina",
+      "kind": "official",
+      "scope": "state",
+      "state": "SC",
+      "region": "Sul",
+      "url": "https://www.saude.sc.gov.br/"
+    },
+    {
+      "id": "ses-rs",
+      "name": "Secretaria da Saúde do Rio Grande do Sul",
+      "kind": "official",
+      "scope": "state",
+      "state": "RS",
+      "region": "Sul",
+      "url": "https://saude.rs.gov.br/"
+    },
+    {
+      "id": "sesa-pr",
+      "name": "Secretaria da Saúde do Paraná",
+      "kind": "official",
+      "scope": "state",
+      "state": "PR",
+      "region": "Sul",
+      "url": "https://www.saude.pr.gov.br/"
+    },
+    {
+      "id": "sespa-pa",
+      "name": "Secretaria de Estado de Saúde Pública do Pará",
+      "kind": "official",
+      "scope": "state",
+      "state": "PA",
+      "region": "Norte",
+      "url": "https://www.saude.pa.gov.br/"
+    }
+  ]
+}
