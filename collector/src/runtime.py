@@ -168,6 +168,29 @@ def _pci_article_links(page: str):
         yield absolute, label, snippet
 
 
+def _pci_primary_text(page: str) -> str:
+    text = strip_tags(page)
+    markers = (
+        "Compartilhe:",
+        "Material Básico para Concursos",
+        "Arredores:",
+        "Veja também:",
+        "Mapa:",
+    )
+    cut = len(text)
+    for marker in markers:
+        idx = text.find(marker)
+        if idx >= 0:
+            cut = min(cut, idx)
+    return text[:cut]
+
+
+def _pci_title_from_url(url: str) -> str:
+    slug = url.rstrip("/").rsplit("/", 1)[-1]
+    slug = re.sub(r"-\d+$", "", slug)
+    return " ".join(slug.replace("-", " ").split()).capitalize()
+
+
 def _pci_official_url(page: str):
     pat = re.compile(
         r"""<a\b[^>]*href=["'](https?://[^"']+)["'][^>]*>([\s\S]*?)</a>""",
@@ -186,6 +209,10 @@ def _pci_official_url(page: str):
                 "youtube.",
                 "facebook.",
                 "instagram.",
+                "t.me/",
+                "telegram.",
+                "wa.me/",
+                "whatsapp.",
             )
         ):
             continue
@@ -226,19 +253,24 @@ def collect_pci() -> list[dict]:
             continue
 
         detail_text = strip_tags(detail_page)
+        primary_text = _pci_primary_text(detail_page)
         h1 = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", detail_page, flags=re.I)
-        title = strip_tags(h1.group(1)) if h1 else (label or card_text[:180])
+        title = strip_tags(h1.group(1)) if h1 else ""
+        if not title.strip():
+            title = _pci_title_from_url(absolute)
+        if not title.strip():
+            title = label or card_text[:180]
 
         ficha = Ficha(
             id="x",
             titulo=title,
             orgao=label,
-            cargo=detail_text[:20000],
+            cargo=primary_text[:16000],
         )
         if not eh_medico(ficha):
             continue
 
-        medical_terms = normalizar(detail_text)
+        medical_terms = normalizar(primary_text)
         if any(
             x in medical_terms
             for x in ("medico veterinario", "biomedico")
@@ -267,16 +299,16 @@ def collect_pci() -> list[dict]:
         if deadline is None:
             insc_match = re.search(
                 r"inscri[^.]{0,220}?(\d{2}/\d{2}/\d{4})",
-                detail_text,
+                primary_text,
                 flags=re.I,
             )
             deadline = extract_deadline(insc_match.group(0)) if insc_match else None
 
-        status = status_for(deadline, detail_text)
+        status = status_for(deadline, primary_text)
         if status == "closed":
             continue
 
-        specs = detectar_especialidades(detail_text)
+        specs = detectar_especialidades(primary_text)
         if len(specs) == 1:
             specialty = specs[0].replace("/", " / ").title()
         elif len(specs) > 1:
@@ -295,12 +327,12 @@ def collect_pci() -> list[dict]:
             "city": "",
             "state": extract_uf(title + " " + card_text),
             "specialty": specialty,
-            "salary": extract_salary(card_text) or extract_salary(detail_text[:12000]),
+            "salary": extract_salary(card_text) or extract_salary(primary_text[:12000]),
             "workload": None,
             "vacancies": _extract_vacancies(card_text),
             "deadline": deadline,
             "status": status,
-            "modality": modality_for(detail_text),
+            "modality": modality_for(title),
             "officialUrl": official_url,
             "sourceUrl": absolute,
             "sourceName": "PCI Concursos — descoberta auxiliar",
