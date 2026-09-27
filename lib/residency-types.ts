@@ -16,6 +16,7 @@ export type ResidencyOpportunity = {
   fee: number | null;
   board: string | null;
   officialUrl: string | null;
+  editalPdf?: string | null;
   sourceUrl: string | null;
   sourceName: string;
   sourceType: "official" | "aggregator" | "demo";
