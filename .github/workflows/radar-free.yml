@@ -42,10 +42,15 @@ jobs:
         run: |
           mkdir -p runtime
           gh release download radar-data --pattern "opportunities.json" --dir runtime || true
+          gh release download radar-data --pattern "residencies.json" --dir runtime || true
           gh release download radar-data --pattern "state.json" --dir runtime || true
           if [ ! -f runtime/opportunities.json ]; then
             printf '{"updatedAt":null,"items":[]}
 ' > runtime/opportunities.json
+          fi
+          if [ ! -f runtime/residencies.json ]; then
+            printf '{"updatedAt":null,"items":[]}
+' > runtime/residencies.json
           fi
           if [ ! -f runtime/state.json ]; then
             printf '{"updatedAt":null}
@@ -70,6 +75,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload radar-data runtime/opportunities.json --clobber
+          gh release upload radar-data runtime/residencies.json --clobber
           gh release upload radar-data runtime/changes.json --clobber
           gh release upload radar-data runtime/state.json --clobber
 

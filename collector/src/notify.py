@@ -25,11 +25,21 @@ def main():
     for change in changes[:40]:
         item = change.get("item", {})
         kind = "NOVO" if change.get("type") == "new" else "ATUALIZADO"
+        domain = "RESIDÊNCIA" if change.get("domain") == "residency" else "CONCURSO"
+        organization = item.get("institution") or item.get("organization") or ""
         link = item.get("officialUrl") or item.get("sourceUrl") or ""
+        extra = ""
+        if change.get("domain") == "residency":
+            stipend = item.get("stipend")
+            entry_type = item.get("entryType") or "tipo não informado"
+            extra = f"Entrada: {entry_type}"
+            if stipend:
+                extra += f" | Bolsa: R$ {stipend:,.0f}".replace(",", ".")
         lines.append(
-            f"[{kind}] {item.get('title','')}\n"
-            f"{item.get('organization','')} | {item.get('state','')} | {item.get('specialty','')}\n"
-            f"Prazo: {item.get('deadline') or 'não informado'}\n{link}\n"
+            f"[{domain} · {kind}] {item.get('title','')}\n"
+            f"{organization} | {item.get('state','')} | {item.get('specialty','')}\n"
+            + (f"{extra}\n" if extra else "")
+            + f"Prazo: {item.get('deadline') or 'não informado'}\n{link}\n"
         )
 
     msg = EmailMessage()
