@@ -14,6 +14,7 @@ export type Opportunity = {
   status: OpportunityStatus;
   modality: "Concurso" | "Processo seletivo" | "Residência" | "Outro";
   officialUrl: string | null;
+  sourceUrl?: string | null;
   sourceName: string;
   sourceType: "official" | "aggregator" | "demo";
   updatedAt: string;
