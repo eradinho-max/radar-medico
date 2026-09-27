@@ -1,10 +1,12 @@
 {
-  "name": "Radar Médico",
+  "name": "Radar Médico — Concursos e Residências",
   "short_name": "Radar Médico",
-  "description": "Alertas de concursos e editais para médicos.",
+  "description": "Radar gratuito de concursos, processos seletivos e residências médicas.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#07111f",
   "theme_color": "#07111f",
-  "lang": "pt-BR"
+  "lang": "pt-BR",
+  "categories": ["medical", "education", "productivity"]
 }
