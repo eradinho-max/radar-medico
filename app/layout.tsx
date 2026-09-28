@@ -8,7 +8,12 @@ export const metadata: Metadata = {
   title: "Radar Médico — Concursos e Residências",
   description: "Radar gratuito de concursos, processos seletivos e residências médicas.",
   applicationName: "Radar Médico",
-  manifest: "/manifest.webmanifest"
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icone-radar-medico.png",
+    shortcut: "/icone-radar-medico.png",
+    apple: "/icone-radar-medico.png"
+  }
 };
 
 export const viewport: Viewport = {

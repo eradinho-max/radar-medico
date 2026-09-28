@@ -141,3 +141,54 @@ footer{border-top:1px solid #e2e6eb}footer .shell{color:#7c8898}
 @keyframes brazilSweep{to{transform:rotate(360deg)}}@keyframes pointCycle{0%,68%,100%{opacity:.16;transform:scale(.72)}76%{opacity:1;transform:scale(1.12)}84%{opacity:.38;transform:scale(.92)}}@keyframes statusPulse{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
 @media(max-width:1020px){.hero{grid-template-columns:1fr;gap:28px}.brazilRadarCard{display:block;max-width:760px}.brazilStage{height:340px}.radarCard{display:none!important}}
 @media(max-width:680px){.hero{padding-top:42px;padding-bottom:36px}.brazilRadarCard{padding:13px;border-radius:23px}.brazilStage{height:300px;border-radius:18px}.brazilRadarTop{padding:2px 2px 10px}.scanLegend{font-size:8px}.premiumMetrics{grid-template-columns:repeat(3,1fr)}.premiumMetrics div{padding:10px 8px}.premiumMetrics strong{font-size:16px}.premiumMetrics span{font-size:9px}.alertSection{margin-left:16px;margin-right:16px}}
+
+
+/* Brand identity + radar visibility */
+.brandWithLogo{
+  min-width:210px;
+  display:flex;
+  align-items:center;
+}
+.brandLogo{
+  display:block;
+  width:auto;
+  height:48px;
+  object-fit:contain;
+}
+.footerLogo{
+  display:block;
+  width:auto;
+  height:42px;
+  object-fit:contain;
+}
+.premiumFooter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+}
+.pointHalo{
+  fill:rgba(217,4,41,.22)!important;
+  stroke:rgba(255,86,110,.42)!important;
+  stroke-width:1.8!important;
+}
+.pointCore{
+  filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 0 12px rgba(217,4,41,.8));
+}
+.scanPoint:nth-of-type(3n) .pointHalo{
+  fill:rgba(42,157,143,.22)!important;
+  stroke:rgba(67,206,190,.45)!important;
+}
+.scanPoint:nth-of-type(3n) .pointCore{
+  filter:drop-shadow(0 0 5px #2A9D8F) drop-shadow(0 0 12px rgba(42,157,143,.8));
+}
+@media(max-width:760px){
+  .brandWithLogo{min-width:0}
+  .brandLogo{height:39px}
+  .footerLogo{height:35px}
+  .premiumFooter{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:12px;
+  }
+}

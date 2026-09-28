@@ -55,7 +55,7 @@ export default function BrazilRadar({ total, label, official, auxiliary }: Props
               <stop offset="100%" stopColor="#101923" />
             </linearGradient>
             <filter id="glow">
-              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feGaussianBlur stdDeviation="6" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -80,8 +80,8 @@ export default function BrazilRadar({ total, label, official, auxiliary }: Props
                   } as CSSProperties
                 }
               >
-                <circle className="pointHalo" r="12" />
-                <circle className="pointCore" r="4" filter="url(#glow)" />
+                <circle className="pointHalo" r="21" />
+                <circle className="pointCore" r="7" filter="url(#glow)" />
               </g>
             </g>
           ))}

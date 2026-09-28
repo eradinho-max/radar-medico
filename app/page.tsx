@@ -219,9 +219,12 @@ export default function Home() {
     <main>
       <header className="topbar">
         <div className="shell nav">
-          <a href="#top" className="brand">
-            <span className="brandMark">⌁</span>
-            <span>Radar Médico</span>
+          <a href="#top" className="brand brandWithLogo" aria-label="Radar Médico — início">
+            <img
+              src="/logo-radar-medico.png"
+              alt="Radar Médico"
+              className="brandLogo"
+            />
           </a>
           <nav>
             <a href="#radar">Radar</a>
@@ -698,8 +701,12 @@ export default function Home() {
       </section>
 
       <footer>
-        <div className="shell">
-          <span>Radar Médico · Concursos + Residências</span>
+        <div className="shell premiumFooter">
+          <img
+            src="/logo-radar-medico.png"
+            alt="Radar Médico"
+            className="footerLogo"
+          />
           <span>Confira sempre as regras e prazos no edital correspondente.</span>
         </div>
       </footer>
