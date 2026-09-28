@@ -363,7 +363,9 @@ export default function Home() {
               <span>Ordenação: prazo mais próximo</span>
             </div>
 
-            <div className="cards">
+            <div className="layout">
+              <div>
+                <div className="cards">
               {filtered.map((item) => {
                 const sourceLink = item.officialUrl || item.sourceUrl || null;
                 const sourceLabel =
@@ -442,6 +444,19 @@ export default function Home() {
               {!filtered.length && (
                 <div className="empty">Nenhuma oportunidade encontrada com esses filtros.</div>
               )}
+                </div>
+              </div>
+              <aside className="radarSidebar">
+                <MyRadarPanel
+                specialties={allSpecialties}
+                profile={myRadar}
+                onChange={setMyRadar}
+                onlyMatches={onlyMyRadar}
+                onOnlyMatchesChange={setOnlyMyRadar}
+                contestMatches={myContestMatches}
+                residencyMatches={myResidencyMatches}
+              />
+              </aside>
             </div>
           </>
         ) : (
@@ -518,7 +533,9 @@ export default function Home() {
               <span>Ordenação: prazo mais próximo</span>
             </div>
 
-            <div className="cards">
+            <div className="layout">
+              <div>
+                <div className="cards">
               {filteredResidencies.map((item) => {
                 const sourceLink = item.editalPdf || item.officialUrl || item.sourceUrl;
                 return (
@@ -604,20 +621,23 @@ export default function Home() {
                     : "Nenhuma residência encontrada com esses filtros."}
                 </div>
               )}
+                </div>
+              </div>
+              <aside className="radarSidebar">
+                <MyRadarPanel
+                specialties={allSpecialties}
+                profile={myRadar}
+                onChange={setMyRadar}
+                onlyMatches={onlyMyRadar}
+                onOnlyMatchesChange={setOnlyMyRadar}
+                contestMatches={myContestMatches}
+                residencyMatches={myResidencyMatches}
+              />
+              </aside>
             </div>
           </>
         )}
       </section>
-
-      <MyRadarPanel
-        specialties={allSpecialties}
-        profile={myRadar}
-        onChange={setMyRadar}
-        onlyMatches={onlyMyRadar}
-        onOnlyMatchesChange={setOnlyMyRadar}
-        contestMatches={myContestMatches}
-        residencyMatches={myResidencyMatches}
-      />
 
       <section className="shell alertSection" id="alertas">
         <div>
