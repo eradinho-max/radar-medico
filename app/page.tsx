@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import type { ResidencyOpportunity } from "@/lib/residency-types";
 import MyRadarPanel from "./meu-radar-panel";
+import BrazilRadar from "./brazil-radar";
 import { DEFAULT_MY_RADAR, contestMatchesMyRadar, residencyMatchesMyRadar, type MyRadarProfile } from "@/lib/my-radar";
 
 const UF_OPTIONS = [
@@ -271,28 +272,12 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="radarCard" aria-hidden="true">
-          <div className="radar">
-            <i className="ping one" />
-            <i className="ping two" />
-            <i className="ping three" />
-            <div className="sweep" />
-          </div>
-          <div className="metrics">
-            <div>
-              <strong>{totalActive}</strong>
-              <span>{activeTab === "concursos" ? "concursos" : "residências"}</span>
-            </div>
-            <div>
-              <strong>{activeMeta.officialCount}</strong>
-              <span>fontes oficiais</span>
-            </div>
-            <div>
-              <strong>{activeMeta.auxiliaryCount}</strong>
-              <span>descobertas auxiliares</span>
-            </div>
-          </div>
-        </div>
+        <BrazilRadar
+          total={totalActive}
+          label={activeTab === "concursos" ? "concursos" : "residências"}
+          official={activeMeta.officialCount}
+          auxiliary={activeMeta.auxiliaryCount}
+        />
       </section>
 
       <section className="shell section" id="radar">
