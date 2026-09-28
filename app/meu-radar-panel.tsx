@@ -139,16 +139,12 @@ export default function MyRadarPanel({
   }
 
   return (
-    <section className="shell section" id="meu-radar">
-      <div className="sectionHead">
-        <div>
-          <div className="eyebrow cyan">MEU RADAR</div>
-          <h2>Suas preferências em um só lugar.</h2>
-          <p>Escolha o que realmente interessa. O perfil fica salvo neste dispositivo e pode ser alterado a qualquer momento.</p>
-        </div>
+    <aside className="myRadarPanel" id="meu-radar">
+      <div className="myRadarBlock myRadarIntro">
+        <div className="eyebrow cyan">MEU RADAR</div>
+        <h3>Seu radar personalizado</h3>
+        <p>Estados, especialidades e alertas salvos em um só lugar.</p>
       </div>
-
-      <div className="myRadarPanel">
         <div className="myRadarBlock">
           <h3>O que acompanhar</h3>
           <div className="checkGrid compact">
@@ -233,7 +229,6 @@ export default function MyRadarPanel({
           <div><strong>{contestMatches}</strong><span>concursos compatíveis agora</span></div>
           <div><strong>{residencyMatches}</strong><span>residências compatíveis agora</span></div>
         </div>
-      </div>
-    </section>
+    </aside>
   );
 }
